@@ -1,0 +1,230 @@
+/* REP ARENA app shell layout */
+.layout {
+  display: flex;
+  min-height: 100%;
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--sidebar-w);
+  background: linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  border-right: var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4);
+  gap: var(--sp-2);
+  z-index: 40;
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2) var(--sp-5);
+}
+.sidebar__brand img {
+  width: 34px;
+  height: 34px;
+}
+.sidebar__brand strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  letter-spacing: 0.02em;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--r-md);
+  color: var(--text-1);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  text-decoration: none;
+}
+.nav-item:hover {
+  background: var(--bg-2);
+  color: var(--text-0);
+  text-decoration: none;
+}
+.nav-item.is-active {
+  background: linear-gradient(90deg, var(--brand) 0, var(--brand) 3px, rgba(232, 89, 12, 0.09) 3px, rgba(232, 89, 12, 0.09) 100%);
+  color: var(--brand-strong);
+  box-shadow: inset 0 0 20px rgba(232, 89, 12, 0.05);
+}
+.nav-section {
+  padding: var(--sp-5) var(--sp-2) var(--sp-2);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.nav-section:first-child {
+  padding-top: 0;
+}
+.nav-badge {
+  margin-left: auto;
+}
+
+.layout__main {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-5);
+  background: color-mix(in srgb, var(--bg-0) 82%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: var(--border-soft);
+}
+.topbar__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+.topbar__spacer {
+  flex: 1;
+}
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+/* Bottom nav (mobile) */
+.bottom-nav {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  height: var(--bottom-nav-h);
+  display: none;
+  align-items: center;
+  justify-content: space-around;
+  background: color-mix(in srgb, var(--bg-1) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: var(--border-strong);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  text-decoration: none;
+}
+.bottom-nav a.is-active {
+  color: var(--brand);
+}
+.bottom-nav a span:first-child {
+  font-size: 18px;
+}
+
+@media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+  .layout__main {
+    margin-left: 0;
+    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+  }
+  .topbar {
+    padding: 0 var(--sp-4);
+  }
+  .bottom-nav {
+    display: flex;
+  }
+  .content {
+    padding: var(--sp-4);
+  }
+}
+
+/* Section title helper (used with cards) */
+.section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.section-title__hint {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  margin: 0;
+}
+.section-title__aside {
+  flex-shrink: 0;
+}
+
+/* Page-specific grids */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--sp-4);
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-4);
+}
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-3);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.spread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.mt-0 {
+  margin-top: 0;
+}
+.muted {
+  color: var(--text-2);
+}
