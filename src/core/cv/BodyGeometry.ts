@@ -53,6 +53,10 @@ export interface GeometryObservation {
   hipY: number;
   ankleY: number;
   torsoLength: number;
+  // Squat-specific angles (computed always; only meaningful for squat tracking)
+  kneeAngle: number; // angle at knee: hip–knee–ankle
+  hipAngle: number; // angle at hip: shoulder–hip–knee (torso vs thigh)
+  kneeAligned: boolean;
 }
 
 const SIDE_VIEW_TRACKED = [
@@ -116,6 +120,15 @@ export function analyzeGeometry(
   const exist = (l: NormalizedLandmark | undefined): l is NormalizedLandmark => !!l;
   const elbowAngle = exist(sh) && exist(el) && exist(wr) ? angleDeg(sh, el, wr) : 180;
 
+  const kn = landmarks[s.kneeIdx];
+  const kneeAngle = exist(hip) && exist(kn) && exist(an) ? angleDeg(hip, kn, an) : 180;
+  const hipAngle = exist(sh) && exist(hip) && exist(kn) ? angleDeg(sh, hip, kn) : 180;
+  const kneeAligned = exist(sh) && exist(hip) && exist(kn) ? Math.abs(sh.x - kn.x) * 2 <= torsoScale() : true;
+
+  function torsoScale(): number {
+    return Math.max(distance(sh, hip), distance(hip, kn), 0.08);
+  }
+
   const torsoLength =
     exist(sh) && exist(hip)
       ? Math.max(distance(sh, hip), 0.08)
@@ -165,6 +178,9 @@ export function analyzeGeometry(
     depthProgress,
     extensionProgress,
     trackingConfidence,
+    kneeAngle,
+    hipAngle,
+    kneeAligned,
     side: side ? side.side : null,
     orientation,
     orientationScore,

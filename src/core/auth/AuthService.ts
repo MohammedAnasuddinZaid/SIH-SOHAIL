@@ -179,19 +179,42 @@ function newToken(): string {
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
-// --- ID generation (monotonic, unique) ---
+// --- ID generation (monotonic, unique, memorable) ---
+// Public IDs look like REP-A7K2-Q9LP — short enough to type, unambiguous
+// (no 0/O, 1/I/L), and easy to say out loud for friend lookups.
 
 let idCounter = Number((store<number>("rep:meta").get("idcounter") as unknown) ?? 0);
+
+const ID_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"; // 32 chars, confusion-safe
+const ID_GROUPS = [4, 4];
 
 async function nextPlayerSequence(): Promise<number> {
   idCounter += 1;
   await store<number>("rep:meta").put("idcounter", idCounter);
-  const seq = 10000 + idCounter; // start public ids at REP-10001+ so ids feel "lived in"
-  return seq;
+  return idCounter;
+}
+
+/** Encodes a sequence into a fixed-width base-32 code (confusion-safe alphabet). */
+export function encodePlayerCode(seq: number): string {
+  let n = Math.max(0, Math.floor(seq));
+  let digits = "";
+  do {
+    digits = ID_ALPHABET[n % ID_ALPHABET.length] + digits;
+    n = Math.floor(n / ID_ALPHABET.length);
+  } while (n > 0);
+  digits = digits.padStart(8, ID_ALPHABET[0]);
+  return digits.slice(0, 8);
 }
 
 export function formatPlayerId(seq: number): PlayerId {
-  return `${branding.PLAYER_ID_PREFIX}-${String(seq).padStart(8, "0")}`;
+  const code = encodePlayerCode(seq);
+  let offset = 0;
+  const groups = ID_GROUPS.map((len) => {
+    const part = code.slice(offset, offset + len);
+    offset += len;
+    return part;
+  });
+  return `${branding.PLAYER_ID_PREFIX}-${groups.join("-")}`;
 }
 
 // --- username validation ---

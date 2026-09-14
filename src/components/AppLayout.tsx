@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { branding } from "../config/branding";
 import { useAuthStore } from "../stores/authStore";
@@ -6,6 +6,8 @@ import { useNotifStore, useUnreadCount } from "../stores/notificationStore";
 import { AvatarIcon } from "./Primitives";
 import { Icon, type IconName } from "./Icons";
 import "./layout.css";
+
+const ArenaBackground = lazy(() => import("./ArenaBackground").then((m) => ({ default: m.ArenaBackground })));
 
 interface NavEntry {
   to: string;
@@ -23,6 +25,7 @@ const NAV_SECTIONS: Array<{ heading?: string; entry?: NavEntry }> = [
   { entry: { to: "/social", label: "Friends", icon: "users" } },
   { heading: "Guide" },
   { entry: { to: "/coach", label: "Coach", icon: "chat" } },
+  { entry: { to: "/auth", label: "Your code", icon: "shield" } },
 ];
 
 const MOBILE_NAV: NavEntry[] = [
@@ -73,7 +76,11 @@ export function AppLayout() {
   }, [playerId, subscribe, refresh]);
 
   return (
-    <div className="layout">
+    <>
+      <Suspense fallback={null}>
+        <ArenaBackground />
+      </Suspense>
+      <div className="layout">
       <aside className="sidebar">
         <div className="sidebar__brand">
           <img src={branding.APP_LOGO} alt="" />
@@ -138,5 +145,6 @@ export function AppLayout() {
           </NavLink>
         </nav>
     </div>
+    </>
   );
 }

@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../components/Button";
 import { Badge, Card, SectionTitle } from "../components/Primitives";
 import { Field, Toggle } from "../components/Controls";
 import { Icon, type IconName } from "../components/Icons";
 import { COACH_PERSONALITIES, DEFAULT_AI_ENDPOINT } from "../config/aiCoach";
-import { deleteAccount } from "../core/auth/AuthService";
-import { getSettings, setPersonality, updateSettings, deletePlayerRecord } from "../core/identity/PlayerService";
+import { getSettings, setPersonality, updateSettings } from "../core/identity/PlayerService";
 import { useAuthStore } from "../stores/authStore";
 import { toast } from "../stores/toastStore";
 import type { CoachPersonalityId, UserSettings } from "../types";
 
 export function SettingsPage() {
+  const navigate = useNavigate();
   const player = useAuthStore((s) => s.player);
   const refresh = useAuthStore((s) => s.refreshProfile);
-  const signOut = useAuthStore((s) => s.signOut);
+  const resetIdentity = useAuthStore((s) => s.resetIdentity);
   const id = player?.playerId;
   const [settings, setSettings] = useState<UserSettings | null>(null);
 
@@ -35,13 +36,11 @@ export function SettingsPage() {
     toast("ok", COACH_PERSONALITIES[p].name, COACH_PERSONALITIES[p].tagline);
   }
 
-  async function wipe() {
+  async function newIdentity() {
     if (!id) return;
-    if (!window.confirm("Delete this account and all its data on this device? This cannot be undone.")) return;
-    await deleteAccount(id);
-    await deletePlayerRecord(id);
-    toast("info", "Account deleted");
-    window.location.assign("/auth");
+    if (!window.confirm("Start a fresh identity on this device? This device gets a brand-new player code — no login, no account.")) return;
+    await resetIdentity();
+    toast("ok", "New identity", "This device now plays as a brand-new player.");
   }
 
   if (!settings || !id) return null;
@@ -102,7 +101,7 @@ export function SettingsPage() {
       </Card>
 
       <Card>
-        <SectionTitle title="Account" />
+        <SectionTitle title="You" hint="Every device is its own player — no account, no login, no OTP." />
         <div className="row">
           <Badge tone="info">{player?.playerId}</Badge>
           <span className="muted">{player?.username}</span>
@@ -110,13 +109,13 @@ export function SettingsPage() {
           <Button variant="ghost" onClick={() => void refresh()}>
             Refresh profile
           </Button>
-          <Button variant="ghost" onClick={() => void signOut()}>
-            Sign out
+          <Button variant="primary" onClick={() => navigate("/auth")}>
+            <Icon name="shield" size={16} /> My code
           </Button>
         </div>
         <div style={{ marginTop: "var(--sp-4)" }}>
-          <Button variant="danger" onClick={() => void wipe()}>
-            Delete account & data
+          <Button variant="ghost" onClick={() => void newIdentity()}>
+            <Icon name="refresh" size={14} /> Start a new identity on this device
           </Button>
         </div>
       </Card>

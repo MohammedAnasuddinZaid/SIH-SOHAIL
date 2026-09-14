@@ -1,4 +1,11 @@
 /* REP ARENA app shell layout */
+.arena-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
 .layout {
   display: flex;
   min-height: 100%;
@@ -37,8 +44,8 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: 0.65rem 0.85rem;
-  border-radius: var(--r-md);
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--r-full);
   color: var(--text-1);
   font-weight: 600;
   font-size: var(--fs-sm);
@@ -51,9 +58,9 @@
   text-decoration: none;
 }
 .nav-item.is-active {
-  background: linear-gradient(90deg, var(--brand) 0, var(--brand) 3px, rgba(232, 89, 12, 0.09) 3px, rgba(232, 89, 12, 0.09) 100%);
-  color: var(--brand-strong);
-  box-shadow: inset 0 0 20px rgba(232, 89, 12, 0.05);
+  background: linear-gradient(90deg, rgba(255, 122, 26, 0.16), rgba(255, 122, 26, 0.06));
+  color: var(--brand);
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 26, 0.22), var(--glow-brand);
 }
 .nav-section {
   padding: var(--sp-5) var(--sp-2) var(--sp-2);
@@ -111,7 +118,7 @@
   width: 100%;
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: var(--sp-5);
+  padding: var(--sp-6);
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);

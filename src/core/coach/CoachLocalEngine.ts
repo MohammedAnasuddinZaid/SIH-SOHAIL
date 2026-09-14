@@ -194,3 +194,127 @@ export function reactToUserText(personality: CoachPersonalityId, text: string): 
   }
   return "";
 }
+
+// ────────────────────────────────────────────
+// Conversational intent routing — small talk gets real replies instead of the
+// full numbers dump every time.
+// ────────────────────────────────────────────
+
+export type CoachIntent =
+  | "GREETING"
+  | "HOW_AM_I"
+  | "TRAINING_PLAN"
+  | "MOTIVATION"
+  | "PAIN"
+  | "THANKS"
+  | "FAREWELL"
+  | "DEFAULT";
+
+export function detectIntent(text: string): CoachIntent {
+  const t = text.toLowerCase().trim();
+  if (!t) return "DEFAULT";
+  if (/(pain|hurt|injured|injur|sore|aching|exhausted|tired)/.test(t)) return "PAIN";
+  if (/^(hi|hello|hey|yo|sup|wassup|namaste|good (morning|afternoon|evening))\b/.test(t) || /^(hi|hello|hey|yo|sup)[!.,\s]*$/.test(t)) return "GREETING";
+  if (/(how am i|how.*(doing|going|performance|form|progress)|am i (doing|improving)|status|check.?in|review|streak)/.test(t)) return "HOW_AM_I";
+  if (/(plan|schedule|routine|program|should i|what.*(do|train|workout|session)s?\b|give me|next session|suggest|workout (today|now|for)|how much|how many)/.test(t)) return "TRAINING_PLAN";
+  if (/(motivat|cant'?t|give up|worth it|keep going|struggl|hard|difficult|discourag|unmotivated|tired of)/.test(t)) return "MOTIVATION";
+  if (/(thanks|thank you|thx|cheers|appreciate|nice)/.test(t)) return "THANKS";
+  if (/(bye|goodbye|see (you|ya)|talk later|gtg|gotta go|going now|good night|gn|peace out)/.test(t)) return "FAREWELL";
+  return "DEFAULT";
+}
+
+const PERSONA_LINES: Record<CoachPersonalityId, { greet: string; motivate: string; thanks: string; farewell: string; pain: string }> = {
+  SUPPORTIVE: {
+    greet: "Hey! Good to see you in the arena. 👋",
+    motivate: "You don't have to be perfect — you just have to start. One clean set beats wondering about the rest.",
+    thanks: "Anytime. That's what I'm here for — right beside you, rep by rep.",
+    farewell: "Go crush that session. I'll be here when you're back.",
+    pain: "Take this seriously: if something hurts, rest it. Listen to your body over your ego — tomorrow you'll be glad you did.",
+  },
+  DRILL_SERGEANT: {
+    greet: "Recruit. Good of you to show up.",
+    motivate: "Comfort is a liar. You don't need feelings — you need three more sets with clean form. MOVE.",
+    thanks: "Don't thank me. Pay me back with reps.",
+    farewell: "Disappear until your session is done. Then you may return.",
+    pain: "STOP. Pain is a STOP ORDER, recruit — not a challenge. Rest, ice, and come back strong tomorrow.",
+  },
+  SCIENTIST: {
+    greet: "Greetings. Session data collected — 0 minutes elapsed today.",
+    motivate: "Adaptation happens in the work you do when motivation is nil. A short session still adds a data point.",
+    thanks: "Acknowledged. Positive reinforcement correlates with adherence.",
+    farewell: "Recording session end. See you at the next training load.",
+    pain: "Pain is a signal, not a badge. Recommend rest and a check-in with a professional before resuming load.",
+  },
+};
+
+/**
+ * Compose the full coach reply. Casual intents (hi / plan / motivation / pain)
+ * get short, persona-flavored answers. "How am I doing" and everything else
+ * get the real assessment grounded in the player's data.
+ */
+export function composeCoachReply(_ctx: CoachContext, a: CoachAssessment, personality: CoachPersonalityId, userText: string, personName: string): string {
+  const lines = PERSONA_LINES[personality] ?? PERSONA_LINES.SUPPORTIVE;
+  const custom = reactToUserText(personality, userText);
+  const intent = detectIntent(userText);
+
+  const parts: string[] = [];
+  if (custom) parts.push(custom);
+
+  switch (intent) {
+    case "PAIN":
+      parts.push(lines.pain);
+      parts.push(a.headline);
+      parts.push(
+        a.wantRest
+          ? "Take today off — your body literally asked for it. Tomorrow we rebuild."
+          : "Keep it light, and if it still hurts, a professional should take a look. No rep is worth a season off."
+      );
+      break;
+
+    case "GREETING":
+      parts.push(lines.greet);
+      parts.push(a.headline);
+      parts.push(`Ask me "how am I doing" for a progress check, "what should I train?" for your next session, or just tell me how you feel.`);
+      break;
+
+    case "HOW_AM_I":
+      parts.push(`Here's your check-in, ${personName} said it straight: ${a.focusReason}`);
+      if (a.strengths.length > 0) parts.push(`Going well: ${a.strengths.join(" • ")}.`);
+      if (a.gaps.length > 0) parts.push(`Keep an eye on: ${a.gaps.join(" • ")}.`);
+      if (a.nextSession) parts.push(`Next session: ${a.nextSession.sets} sets × ${a.nextSession.reps} reps, ${a.nextSession.restSec}s rest — ${a.sessionRationale}`);
+      parts.push(closingLine(personality, a.focus));
+      break;
+
+    case "TRAINING_PLAN":
+      parts.push(a.headline);
+      if (a.nextSession) parts.push(`Your next session: ${a.nextSession.sets} sets × ${a.nextSession.reps} reps, ${a.nextSession.restSec}s rest. ${a.sessionRationale}`);
+      parts.push(closingLine(personality, a.focus));
+      break;
+
+    case "MOTIVATION":
+      parts.push(lines.motivate);
+      if (a.nextSession) parts.push(`Keep it simple today: ${a.nextSession.sets}×${a.nextSession.reps} with ${a.nextSession.restSec}s rest. That's the whole mission.`);
+      parts.push(closingLine(personality, a.focus));
+      break;
+
+    case "THANKS":
+      parts.push(lines.thanks);
+      parts.push(a.headline);
+      break;
+
+    case "FAREWELL":
+      parts.push(lines.farewell);
+      break;
+
+    default:
+      parts.push(a.headline);
+      parts.push(`${personName} saw your numbers: ${a.focusReason}`);
+      if (a.strengths.length > 0) parts.push(`Strengths: ${a.strengths.join(" • ")}.`);
+      if (a.gaps.length > 0) parts.push(`Watch out: ${a.gaps.join(" • ")}.`);
+      if (a.nextSession) parts.push(`Next session: ${a.nextSession.sets} sets × ${a.nextSession.reps} reps, ${a.nextSession.restSec}s rest — ${a.sessionRationale}`);
+      parts.push(closingLine(personality, a.focus));
+      break;
+  }
+
+  return parts.filter(Boolean).join("\n\n");
+}

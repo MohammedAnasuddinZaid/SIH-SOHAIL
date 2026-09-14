@@ -6,7 +6,8 @@ import { CameraService, CameraError, type CameraErrorCode } from "./CameraServic
 import { PoseDetectionService } from "./PoseDetectionService";
 import { LandmarkSmoother, MedianFilter } from "./LandmarkSmoother";
 import { analyzeGeometry, type BodySide, type GeometryObservation } from "./BodyGeometry";
-import { PushUpRepEngine, strictnessFactor, type RepEngineEvent, type RepEngineStatus } from "./PushUpRepEngine";
+import { PushUpRepEngine, strictnessFactor, type RepEngineEvent, type RepEngineStatus as PushUpStatus } from "./PushUpRepEngine";
+import { SquatRepEngine, type RepEngineStatus as SquatStatus } from "./SquatRepEngine";
 import { FeedbackManager, FEEDBACK_LIBRARY, type FeedbackMessage } from "./FeedbackManager";
 import { ComboEngine, type ComboSnapshot } from "../game/ComboEngine";
 import { cvConfig } from "../../config/cv";
@@ -18,6 +19,7 @@ import type {
   RepEvent,
   RepTimelineEntry,
   InvalidRepReason,
+  ExerciseType,
 } from "../../types";
 
 export type WorkoutSessionState =
@@ -44,7 +46,7 @@ export type SessionRuntimeEvent =
   | { type: "SESSION_RESUMED" }
   | { type: "CAMERA_ERROR"; code: CameraErrorCode }
   | { type: "SESSION_COMPLETE"; result: WorkoutResult }
-  | { type: "STATUS"; status: RepEngineStatus; geometry: GeometryObservation };
+  | { type: "STATUS"; status: PushUpStatus | SquatStatus; geometry: GeometryObservation };
 
 export interface CalibrationProfile {
   observedTopAngle: number;
@@ -65,7 +67,7 @@ export interface SessionPulse {
   elapsedMs: number;
   width?: number;
   height?: number;
-  status?: RepEngineStatus;
+  status?: PushUpStatus | SquatStatus;
   geometry?: GeometryObservation;
 }
 
@@ -79,11 +81,17 @@ export interface WorkoutSessionOptions {
   durationSec?: number;
   repTarget?: number;
   mirror?: boolean;
+  exercise?: ExerciseType;
 }
+
+export type EngineKind = "PUSH_UP" | "SQUAT";
 
 export class WorkoutSessionManager {
   private opts: WorkoutSessionOptions;
-  private engine: PushUpRepEngine;
+  private engine: PushUpRepEngine | SquatRepEngine = null as unknown as PushUpRepEngine;
+  private get exercise(): EngineKind {
+    return this.opts.exercise ?? "PUSH_UP";
+  }
   private smoother = new LandmarkSmoother(cvConfig.smoothingFactor);
   private feedback = new FeedbackManager(cvConfig.feedbackCooldownMs);
   private combo = new ComboEngine();
@@ -120,17 +128,31 @@ export class WorkoutSessionManager {
   constructor(opts: WorkoutSessionOptions) {
     this.opts = opts;
     const strict = strictnessFactor(opts.strictness ?? "NORMAL");
-    this.engine = new PushUpRepEngine({
-      topAngle: cvConfig.topElbowAngle,
-      bottomAngle: cvConfig.bottomElbowAngle,
-      minRepDuration: cvConfig.minRepDuration,
-      maxRepDuration: cvConfig.maxRepDuration,
-      minDownDuration: cvConfig.minDownDuration,
-      minUpDuration: cvConfig.minUpDuration,
-      hipTolerance: cvConfig.hipAlignmentTolerance,
-      confidenceThreshold: cvConfig.poseConfidenceThreshold + 0.05,
-      strictness: strict,
-    });
+    this.engine =
+      this.exercise === "SQUAT"
+        ? new SquatRepEngine({
+            topAngle: cvConfig.squat.topKneeAngle,
+            bottomAngle: cvConfig.squat.bottomKneeAngle,
+            minHipAngle: cvConfig.squat.minHipAngle,
+            minRepDuration: cvConfig.minRepDuration,
+            maxRepDuration: cvConfig.maxRepDuration,
+            minDownDuration: cvConfig.minDownDuration,
+            minUpDuration: cvConfig.minUpDuration,
+            hipTolerance: cvConfig.squat.hipDriftTolerance,
+            confidenceThreshold: cvConfig.poseConfidenceThreshold + 0.05,
+            strictness: strict,
+          })
+        : new PushUpRepEngine({
+            topAngle: cvConfig.topElbowAngle,
+            bottomAngle: cvConfig.bottomElbowAngle,
+            minRepDuration: cvConfig.minRepDuration,
+            maxRepDuration: cvConfig.maxRepDuration,
+            minDownDuration: cvConfig.minDownDuration,
+            minUpDuration: cvConfig.minUpDuration,
+            hipTolerance: cvConfig.hipAlignmentTolerance,
+            confidenceThreshold: cvConfig.poseConfidenceThreshold + 0.05,
+            strictness: strict,
+          });
   }
 
   getState(): WorkoutSessionState {
@@ -242,6 +264,8 @@ export class WorkoutSessionManager {
 
   private async ensureCamera(): Promise<void> {
     try {
+      this.opts.cameraService.attachVideoElement(this.opts.videoElement);
+      await this.opts.cameraService.initialize({ mirror: this.opts.mirror ?? true });
       await this.opts.cameraService.start();
       const video = this.opts.videoElement;
       this.width = video.videoWidth || 640;
@@ -361,14 +385,7 @@ export class WorkoutSessionManager {
 
     this.onEvent({ type: "POSE_DETECTED", confidence: geometry.trackingConfidence });
 
-    const events = this.engine.process({
-      elbowAngle: geometry.elbowAngle,
-      hipDeviation: geometry.hipDeviation,
-      hipAligned: geometry.hipAligned,
-      trackingConfidence: geometry.trackingConfidence,
-      reliable: geometry.requiredLandmarksVisible,
-      timestamp,
-    });
+    const events = this.processFrame(geometry, timestamp);
 
     for (const ev of events) this.handleEngineEvent(ev, timestamp);
 
@@ -379,6 +396,30 @@ export class WorkoutSessionManager {
 
     // session duration
     this.pulse(timestamp, geometry);
+  }
+
+  /** Builds the engine observation for the active exercise and processes it. */
+  private processFrame(geometry: GeometryObservation, timestamp: number): RepEngineEvent[] {
+    const engine = this.engine;
+    if (engine instanceof SquatRepEngine) {
+      return engine.process({
+        kneeAngle: geometry.kneeAngle,
+        hipAngle: geometry.hipAngle,
+        kneeAligned: geometry.kneeAligned,
+        hipAligned: geometry.hipAligned,
+        trackingConfidence: geometry.trackingConfidence,
+        reliable: geometry.requiredLandmarksVisible,
+        timestamp,
+      });
+    }
+    return engine.process({
+      elbowAngle: geometry.elbowAngle,
+      hipDeviation: geometry.hipDeviation,
+      hipAligned: geometry.hipAligned,
+      trackingConfidence: geometry.trackingConfidence,
+      reliable: geometry.requiredLandmarksVisible,
+      timestamp,
+    });
   }
 
   private handleEngineEvent(ev: RepEngineEvent, timestamp: number): void {
@@ -457,15 +498,27 @@ export class WorkoutSessionManager {
   private emitWarnings(geometry: GeometryObservation, events: RepEngineEvent[]): void {
     if (events.length > 0) return;
     const eng = this.engine.status();
+    const angle = this.exercise === "SQUAT" ? geometry.kneeAngle : geometry.elbowAngle;
     if (!eng.inRep) {
       // Pre-rep guidance: if body is roughly ready but shallow
-      if (geometry.elbowAngle > 75 && geometry.elbowAngle < 150) {
+      if (this.exercise === "SQUAT") {
+        if (angle > -1 && angle < 165) {
+          this.feedback.emit({ id: "starting", code: "LOW_CONFIDENCE", message: "Get ready at the top — stand tall", priority: "GENERAL_TIP" });
+        }
+      } else if (angle > 75 && angle < 150) {
         this.feedback.emit({ id: "starting", code: "LOW_CONFIDENCE", message: "Get ready at the top position", priority: "GENERAL_TIP" });
       }
       return;
     }
-    const delta = this.profile ? Math.abs(geometry.elbowAngle - this.profile.observedTopAngle) : 0;
+    const delta = this.profile ? Math.abs(angle - this.profile.observedTopAngle) : 0;
     void delta;
+    if (this.exercise === "SQUAT") {
+      if (eng.phase === "BOTTOM") {
+        if (!geometry.kneeAligned) this.emitFeedback("KNEE_DRIFT");
+        else if (geometry.hipAngle < 75) this.emitFeedback("TORSO_LEAN");
+      }
+      return;
+    }
     if (eng.phase === "BOTTOM" && !geometry.hipAligned) {
       this.emitFeedback(geometry.hipDeviation > 0 ? "HIP_SAG" : "HIP_PIKE");
     }

@@ -8,7 +8,7 @@ import { PoseDetectionService } from "../core/cv/PoseDetectionService";
 import { WorkoutSessionManager, type SessionPulse, type WorkoutSessionOptions } from "../core/cv/WorkoutSessionManager";
 import { applyWorkoutResult, type WorkoutGrant } from "../core/progression/ProgressionService";
 import { useAuthStore } from "../stores/authStore";
-import type { PlayerId, WorkoutMode } from "../types";
+import type { ExerciseType, PlayerId, WorkoutMode } from "../types";
 import "./pages.css";
 
 type Phase = "SETUP" | "CALIBRATING" | "READY" | "RUNNING" | "PAUSED" | "FINISHED" | "ERROR";
@@ -27,6 +27,7 @@ export function WorkoutPage() {
   const duration = Number(params.get("duration") ?? 60);
   const target = Number(params.get("target") ?? 20);
   const strictness = (params.get("strictness") as "RELAXED" | "NORMAL" | "STRICT" | null) ?? "NORMAL";
+  const exercise = (params.get("exercise") as ExerciseType | null) ?? "PUSH_UP";
 
   const [phase, setPhase] = useState<Phase>("SETUP");
   const [calProgress, setCalProgress] = useState(0);
@@ -145,6 +146,7 @@ export function WorkoutPage() {
           durationSec: duration > 0 ? duration : undefined,
           repTarget: target,
           mirror: true,
+          exercise,
         };
         const session = new WorkoutSessionManager(opts);
         session.onPulse = handlePulse;
@@ -209,8 +211,9 @@ export function WorkoutPage() {
         <Card>
           <h3>How a session works</h3>
           <p>
-            First your pose is calibrated — get into an extended plank (top) position and hold it for a moment. Then you get a 3-second
-            countdown and the engine counts <strong>validated</strong> push-ups. Your camera feed is processed entirely on this device.
+            {exercise === "SQUAT"
+              ? "First your pose is calibrated — stand tall in your squat (top) position and hold for a moment. Then you get a 3-second countdown and the engine counts validated squats by tracking your knee depth and torso control. Your camera feed is processed entirely on this device."
+              : "First your pose is calibrated — get into an extended plank (top) position and hold it for a moment. Then you get a 3-second countdown and the engine counts validated push-ups. Your camera feed is processed entirely on this device."}
           </p>
           <div className="row">
             <Button variant="primary" onClick={() => void startCalibration()}>Start calibration</Button>

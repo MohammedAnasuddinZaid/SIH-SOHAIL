@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, type ReactNode } from "react";
 import { useAuthStore, usePlayerId } from "./stores/authStore";
 import { useNotifStore } from "./stores/notificationStore";
@@ -30,15 +30,6 @@ function BootGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-function AuthRedirect({ children }: { children: ReactNode }) {
-  const player = useAuthStore((s) => s.player);
-  const location = useLocation();
-  if (!player) {
-    return <Navigate to="/auth" replace state={{ from: location.pathname }} />;
-  }
-  return <>{children}</>;
-}
-
 export default function App() {
   const bootstrap = useAuthStore((s) => s.bootstrap);
   const playerId = usePlayerId();
@@ -58,13 +49,7 @@ export default function App() {
         <ToastViewport />
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
-          <Route
-            element={
-              <AuthRedirect>
-                <AppLayout />
-              </AuthRedirect>
-            }
-          >
+          <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/train" element={<TrainPage />} />
             <Route path="/workout" element={<WorkoutPage />} />

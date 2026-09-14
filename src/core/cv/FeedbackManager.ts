@@ -82,4 +82,6 @@ export const FEEDBACK_LIBRARY: Record<string, { message: string; priority: Feedb
   UNSTABLE_POSE: { message: "Hold a steady position", priority: "FORM_WARNING" },
   INCOMPLETE_MOVEMENT: { message: "Complete the full movement", priority: "FORM_WARNING" },
   UNRECOGNIZED_MOVEMENT: { message: "Full push-up only", priority: "FORM_ERROR" },
+  KNEE_DRIFT: { message: "Keep your knees over your toes", priority: "FORM_WARNING" },
+  TORSO_LEAN: { message: "Sit your hips back — chest up", priority: "FORM_WARNING" },
 };

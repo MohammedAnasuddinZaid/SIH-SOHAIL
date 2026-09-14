@@ -219,6 +219,9 @@ export type WorkoutMode =
   | "GHOST_MODE"
   | "PRACTICE";
 
+/** The movement being rep-counted by the CV engine. */
+export type ExerciseType = "PUSH_UP" | "SQUAT";
+
 export type RepValidity = "VALID" | "INVALID";
 
 export type InvalidRepReason =
@@ -230,7 +233,9 @@ export type InvalidRepReason =
   | "LOST_TRACKING"
   | "INCOMPLETE_MOVEMENT"
   | "UNSTABLE_POSE"
-  | "UNRECOGNIZED_MOVEMENT";
+  | "UNRECOGNIZED_MOVEMENT"
+  | "KNEE_DRIFT"
+  | "TORSO_LEAN";
 
 export interface RepEvent {
   type: "VALID_REP" | "INVALID_REP";

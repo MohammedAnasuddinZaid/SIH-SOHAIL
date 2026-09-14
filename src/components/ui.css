@@ -5,14 +5,14 @@
   justify-content: center;
   gap: var(--sp-2);
   border: 0;
-  border-radius: var(--r-md);
+  border-radius: var(--r-full);
   font-weight: 600;
   font-size: var(--fs-md);
   line-height: 1;
-  padding: 0.7rem 1.1rem;
+  padding: 0.72rem 1.2rem;
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease),
-    box-shadow var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+    box-shadow var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
   color: var(--text-0);
   background: var(--bg-3);
   user-select: none;
@@ -89,14 +89,14 @@
 .card {
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
   border: var(--border-soft);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-xl);
   padding: var(--sp-5);
   box-shadow: var(--shadow-1);
   transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
 .card:hover {
   transform: translateY(-2px);
-  border-color: rgba(232, 89, 12, 0.22);
+  border-color: rgba(255, 122, 26, 0.28);
   box-shadow: var(--shadow-2);
 }
 .card--pad-sm {
@@ -253,6 +253,30 @@
   background: var(--surface-3);
   color: var(--text-0);
   box-shadow: var(--shadow-1);
+}
+
+/* Player code chip — copyable REP-XXXX-XXXX identity */
+.code-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0.32rem 0.75rem;
+  border-radius: var(--r-full);
+  background: var(--bg-2);
+  border: 1px solid var(--border-strong);
+  color: var(--brand);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  font-family: inherit;
+}
+.code-chip:hover {
+  border-color: rgba(255, 122, 26, 0.5);
+  box-shadow: var(--glow-brand);
+}
+.code-chip svg {
+  opacity: 0.7;
 }
 
 .toggle {

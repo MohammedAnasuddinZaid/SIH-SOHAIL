@@ -7,10 +7,10 @@ import { Icon } from "../components/Icons";
 import { BATTLE_MODES } from "../config/game";
 import { useAuthStore } from "../stores/authStore";
 import { toast } from "../stores/toastStore";
-import type { BattleMode, WorkoutMode } from "../types";
+import type { BattleMode, ExerciseType, WorkoutMode } from "../types";
 
 const MODE_META: Record<BattleMode, { label: string; desc: string; mode: WorkoutMode }> = {
-  REP_RACE: { label: "Push-Up Race", desc: "Most validated reps wins the round.", mode: "REP_TARGET" },
+  REP_RACE: { label: "Rep Race", desc: "Most validated reps wins the round.", mode: "REP_TARGET" },
   TIME_TRIAL: { label: "Time Trial", desc: "Rep target on a clock.", mode: "TIME_TRIAL" },
   FIRST_TO: { label: "First to X", desc: "First to hit the rep target wins.", mode: "REP_TARGET" },
   FFA: { label: "Free For All", desc: "Everyone races, best score wins.", mode: "REP_TARGET" },
@@ -25,6 +25,7 @@ export function TrainPage() {
   const [duration, setDuration] = useState(60);
   const [target, setTarget] = useState(20);
   const [strictness, setStrictness] = useState<"RELAXED" | "NORMAL" | "STRICT">("NORMAL");
+  const [exercise, setExercise] = useState<ExerciseType>("PUSH_UP");
 
   const meta = MODE_META[mode];
   const durationChoice = mode === "FIRST_TO" ? 0 : duration; // first-to uses rep target
@@ -32,14 +33,14 @@ export function TrainPage() {
   function start() {
     if (!playerId) return;
     toast("info", "Opening workout", "Calibrate your pose, then reps count automatically.");
-    const params = new URLSearchParams({ mode: meta.mode, duration: String(durationChoice), target: String(target), strictness });
+    const params = new URLSearchParams({ mode: meta.mode, duration: String(durationChoice), target: String(target), strictness, exercise });
     navigate(`/workout?${params.toString()}`);
   }
 
   return (
     <>
       <section>
-        <SectionTitle title="Solo training" hint="Your camera detects push-ups in real time. Fully on-device." />
+        <SectionTitle title="Solo training" hint="Your camera detects push-ups or squats in real time. Fully on-device." />
         <div className="grid-3">
           {BATTLE_MODES.map((bm) => {
             const m = MODE_META[bm.id];
@@ -66,6 +67,12 @@ export function TrainPage() {
       <Card>
         <SectionTitle title="Round settings" />
         <div className="grid-2">
+          <Field label="Exercise">
+            <select className="field__control" value={exercise} onChange={(e) => setExercise(e.target.value as ExerciseType)}>
+              <option value="PUSH_UP">Push-Ups</option>
+              <option value="SQUAT">Squats</option>
+            </select>
+          </Field>
           <Field label="Duration (seconds)">
             <select className="field__control" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
               {[30, 60, 90, 120, 180].map((d) => (

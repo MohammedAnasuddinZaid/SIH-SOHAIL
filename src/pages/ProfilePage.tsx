@@ -4,9 +4,31 @@ import { Badge, Card, ProgressBar, SectionTitle, Stat } from "../components/Prim
 import { EmptyState } from "../components/Primitives";
 import { Button } from "../components/Button";
 import { AvatarIcon } from "../components/Primitives";
+import { Icon } from "../components/Icons";
 import { levelProgress, getPRs, playerOverview, getUserAchievements, getRating } from "../core/progression/ProgressionService";
 import { getMatchHistory } from "../core/multiplayer/MatchService";
+import { toast } from "../stores/toastStore";
 import type { MatchResult, PersonalRecord } from "../types";
+
+function PlayerCodeChip({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+      toast("ok", "Code copied", "Share it so friends find you.");
+    } catch {
+      toast("info", "Your code", code);
+    }
+  }
+  return (
+    <button type="button" className="code-chip" onClick={() => void copy()} title="Copy player code">
+      <span className="mono">{code}</span>
+      <Icon name={copied ? "check" : "copy"} size={14} />
+    </button>
+  );
+}
 
 export function ProfilePage() {
   const player = useAuthStore((s) => s.player);
@@ -46,7 +68,7 @@ export function ProfilePage() {
             <h3 style={{ margin: 0 }}>{player.username}</h3>
             <div className="row">
               <Badge tone="brand">Level {lvl?.currentLevel ?? "—"}</Badge>
-              <span className="muted short mono">{player.playerId}</span>
+              <PlayerCodeChip code={player.playerId} />
               {player.title ? <Badge>{player.title}</Badge> : null}
             </div>
             {lvl ? <ProgressBar value={lvl.xpIntoLevel} max={lvl.xpRequiredForNextLevel} /> : null}

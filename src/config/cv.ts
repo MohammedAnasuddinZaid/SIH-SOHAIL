@@ -12,6 +12,17 @@ export interface CVConfiguration {
   topElbowAngle: number;
   bottomElbowAngle: number;
 
+  // squats
+  squat: {
+    topKneeAngle: number;
+    bottomKneeAngle: number;
+    // torso (shoulder–hip–knee) angle floor: leaning too far forward = bad back
+    minHipAngle: number;
+    maxHipAngle: number;
+    // how far the hips are allowed to drift off the vertical foot line
+    hipDriftTolerance: number;
+  };
+
   // rep timing (ms)
   minRepDuration: number;
   maxRepDuration: number;
@@ -52,6 +63,14 @@ export const cvConfig: CVConfiguration = {
 
   topElbowAngle: 162,
   bottomElbowAngle: 88,
+
+  squat: {
+    topKneeAngle: 168,
+    bottomKneeAngle: 95,
+    minHipAngle: 55,
+    maxHipAngle: 178,
+    hipDriftTolerance: 0.34,
+  },
 
   minRepDuration: 380,
   maxRepDuration: 6000,

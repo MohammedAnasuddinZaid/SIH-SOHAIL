@@ -1,5 +1,5 @@
 :root {
-  --home-cta-bg: linear-gradient(135deg, rgba(232, 89, 12, 0.06), rgba(66, 99, 235, 0.05));
+  --home-cta-bg: linear-gradient(135deg, rgba(255, 122, 26, 0.09), rgba(110, 164, 255, 0.07));
 }
 
 /* ──────────────────────────── Auth ──────────────────────────── */
@@ -19,8 +19,8 @@
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(22, 24, 29, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(22, 24, 29, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(ellipse 900px 600px at 50% 50%, #000 30%, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse 900px 600px at 50% 50%, #000 30%, transparent 75%);
@@ -40,7 +40,7 @@
   height: 380px;
   top: -120px;
   left: -100px;
-  background: radial-gradient(circle at 30% 30%, #ffd8a8, transparent 65%);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 138, 61, 0.4), transparent 65%);
   animation: orb-float 14s ease-in-out infinite;
 }
 .auth-orb--b {
@@ -48,7 +48,7 @@
   height: 420px;
   bottom: -140px;
   right: -120px;
-  background: radial-gradient(circle at 60% 40%, #d0ebff, transparent 65%);
+  background: radial-gradient(circle at 60% 40%, rgba(110, 164, 255, 0.32), transparent 65%);
   animation: orb-float 18s ease-in-out infinite reverse;
 }
 .auth-orb--c {
@@ -56,7 +56,7 @@
   height: 260px;
   top: 40%;
   left: 58%;
-  background: radial-gradient(circle at 50% 50%, #e5dbff, transparent 70%);
+  background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.3), transparent 70%);
   opacity: 0.3;
   animation: orb-float 22s ease-in-out infinite 2s;
 }
@@ -92,7 +92,7 @@
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(160deg, rgba(232, 89, 12, 0.35), rgba(66, 99, 235, 0.25) 45%, transparent 70%);
+  background: linear-gradient(160deg, rgba(255, 122, 26, 0.4), rgba(110, 164, 255, 0.28) 45%, transparent 70%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -330,8 +330,8 @@
 
 /* ──────────────────────────── Home ──────────────────────────── */
 .home-hero {
-  --hero-grad: radial-gradient(600px 260px at 20% 0%, rgba(232, 89, 12, 0.08), transparent 60%),
-    radial-gradient(600px 260px at 90% 10%, rgba(66, 99, 235, 0.07), transparent 60%);
+  --hero-grad: radial-gradient(600px 260px at 20% 0%, rgba(255, 122, 26, 0.1), transparent 60%),
+    radial-gradient(600px 260px at 90% 10%, rgba(110, 164, 255, 0.09), transparent 60%);
   background: var(--hero-grad), var(--surface);
   border: var(--border-soft);
   border-radius: var(--r-xl);
@@ -347,11 +347,12 @@
 
 .mode-card {
   border: 1px solid var(--border-soft);
+  border-radius: var(--r-xl);
   transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 .mode-card.is-selected {
-  border-color: rgba(232, 89, 12, 0.55);
-  box-shadow: 0 0 0 1px rgba(232, 89, 12, 0.25), var(--shadow-1);
+  border-color: rgba(255, 122, 26, 0.55);
+  box-shadow: 0 0 0 1px rgba(255, 122, 26, 0.28), var(--glow-brand);
 }
 .mode-card.is-selected h3 {
   color: var(--brand);

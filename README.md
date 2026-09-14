@@ -10,12 +10,18 @@ personal AI fitness coach.
 
 ## Highlights
 
+- **No login, no OTP** — every device is its own identity. The app mints a
+  random device id on first launch and derives a unique, memorable
+  `REP-XXXX-XXXX` code (confusion-safe alphabet, no `0/O/1/I/L`). Friends type
+  that code to find you; you can start a fresh identity any time from "Your
+  code" in Settings. No accounts, no passwords, works fully offline.
 - **Computer vision rep counting** — MediaPipe (on-device) pose landmarks drive
   a state machine that only counts a rep when the full movement completes with
-  sufficient depth, extension, alignment and confidence. Every rep gets a
-  `VALID`, `INVALID` or (in ambiguous cases) rejected outcome — nothing is
-  fabricated. All camera processing stays on device; raw video never leaves the
-  browser.
+  sufficient depth, extension, alignment and confidence. Push-ups AND squats
+  are supported (squat form is judged on knee depth, knee-over-toe alignment
+  and torso angle). Every rep gets a `VALID`, `INVALID` or (in ambiguous cases)
+  rejected outcome — nothing is fabricated. All camera processing stays on
+  device; raw video never leaves the browser.
 - **Server-authoritative progression** — Reps are counted locally, but XP,
   levels, ranks, PRs, quests, leaderboards and battle results are validated
   rules-side before they can inflate your score. Anti-cheat is probabilistic,
@@ -41,6 +47,7 @@ personal AI fitness coach.
 - React 18 + TypeScript + Vite
 - zustand (state), react-router (routing)
 - @mediapipe/tasks-vision (on-device pose detection)
+- `three` (lazy-loaded decorative arena background)
 - `ws` for the optional realtime relay server
 - Vitest + jsdom for tests
 

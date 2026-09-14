@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { assess, closingLine, reactToUserText } from "../src/core/coach/CoachLocalEngine";
+import { assess, closingLine, reactToUserText, detectIntent, composeCoachReply } from "../src/core/coach/CoachLocalEngine";
 import { buildCoachContext, serializeCoachContext } from "../src/core/coach/CoachContextBuilder";
 import type { CoachContext } from "../src/core/coach/CoachContextBuilder";
 
@@ -106,6 +106,41 @@ describe("CoachLocalEngine", () => {
       expect(closingLine(p, "TECHNIQUE").length).toBeGreaterThan(0);
     }
     expect(reactToUserText("DRILL_SERGEANT", "I'm in pain today").length).toBeGreaterThan(0);
+  });
+});
+
+describe("conversational coach intents", () => {
+  const a = assess(ctx());
+
+  it("detects the right intent for small talk", () => {
+    expect(detectIntent("hi coach")).toBe("GREETING");
+    expect(detectIntent("how am I doing today?")).toBe("HOW_AM_I");
+    expect(detectIntent("what should I train?")).toBe("TRAINING_PLAN");
+    expect(detectIntent("my knee hurts a bit")).toBe("PAIN");
+    expect(detectIntent("thanks!")).toBe("THANKS");
+    expect(detectIntent("see you later")).toBe("FAREWELL");
+  });
+
+  it("keeps a greeting short instead of dumping the full numbers block", () => {
+    const reply = composeCoachReply(ctx(), a, "SUPPORTIVE", "hi", "Tester");
+    expect(reply.length).toBeLessThan(400);
+    expect(reply).not.toContain("Next session");
+  });
+
+  it("answers 'how am I doing' with the progress check", () => {
+    const reply = composeCoachReply(ctx(), a, "SUPPORTIVE", "how am i doing", "Tester");
+    expect(reply.toLowerCase()).toContain("check-in");
+  });
+
+  it("treats pain reports as a stop order, not a numbers dump", () => {
+    const reply = composeCoachReply(ctx(), a, "DRILL_SERGEANT", "my lower back hurts", "Tester");
+    expect(reply.toLowerCase()).toContain("stop");
+  });
+
+  it("answers plan requests with a concrete next session", () => {
+    const shown = assess(ctx({ overview: { ...ctx().overview, totalWorkouts: 8, totalReps: 160 } as unknown as CoachContext["overview"] }));
+    const reply = composeCoachReply(ctx({ overview: { ...ctx().overview, totalWorkouts: 8, totalReps: 160 } as unknown as CoachContext["overview"] }), shown, "SCIENTIST", "what should I train?", "Tester");
+    expect(reply).toContain("sets");
   });
 });
 

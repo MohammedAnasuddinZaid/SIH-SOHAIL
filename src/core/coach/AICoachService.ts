@@ -10,7 +10,7 @@
 
 import { store, createId } from "../storage/StorageService";
 import { buildCoachContext, serializeCoachContext, type CoachContext } from "./CoachContextBuilder";
-import { assess, closingLine, reactToUserText, type CoachAssessment } from "./CoachLocalEngine";
+import { assess, composeCoachReply, type CoachAssessment } from "./CoachLocalEngine";
 import { COACH_PERSONALITIES } from "../../config/aiCoach";
 import { getSettings } from "../identity/PlayerService";
 import type { AICoachMessage, CoachPersonalityId, PlayerId } from "../../types";
@@ -126,16 +126,7 @@ export async function clearCoachMemory(playerId: PlayerId): Promise<void> {
 }
 
 function localReply(_ctx: CoachContext, a: CoachAssessment, personality: CoachPersonalityId, userText: string, personName: string): string {
-  const parts: string[] = [];
-  const custom = reactToUserText(personality, userText);
-  if (custom) parts.push(custom);
-  parts.push(`${a.headline}`);
-  parts.push(`${personName} saw your numbers: ${a.focusReason}`);
-  if (a.strengths.length > 0) parts.push(`Strengths: ${a.strengths.join(" • ")}.`);
-  if (a.gaps.length > 0) parts.push(`Watch out: ${a.gaps.join(" • ")}.`);
-  if (a.nextSession) parts.push(`Next session: ${a.nextSession.sets} sets × ${a.nextSession.reps} reps, ${a.nextSession.restSec}s rest — ${a.sessionRationale}`);
-  parts.push(closingLine(personality, a.focus));
-  return parts.join("\n\n");
+  return composeCoachReply(_ctx, a, personality, userText, personName);
 }
 
 // ────────────────────────────────────────────

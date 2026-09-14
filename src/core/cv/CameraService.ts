@@ -122,7 +122,7 @@ export class CameraService {
 
   pause(): void {
     if (this.stream) {
-      this.stream.getVideoTracks().forEach((t) => t.enabled === false);
+      this.stream.getVideoTracks().forEach((t) => (t.enabled = false));
     }
     this.state = "PAUSED";
   }
