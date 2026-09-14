@@ -121,6 +121,27 @@ describe("conversational coach intents", () => {
     expect(detectIntent("see you later")).toBe("FAREWELL");
   });
 
+  it("detects health, wellbeing and lifestyle intents", () => {
+    expect(detectIntent("hi doctor")).toBe("WELLNESS");
+    expect(detectIntent("should I see a doctor?")).toBe("WELLNESS");
+    expect(detectIntent("how are you today?")).toBe("HOW_ARE_YOU");
+    expect(detectIntent("analyze my form")).toBe("BODY_ANALYSIS");
+    expect(detectIntent("how can I improve my push ups?")).toBe("IMPROVE");
+    expect(detectIntent("can I get better at squats?")).toBe("IMPROVE");
+    expect(detectIntent("what stretches for a warm up?")).toBe("EXERCISE_SUGGEST");
+    expect(detectIntent("should I take a rest day?")).toBe("RECOVERY");
+    expect(detectIntent("do I need to rest today?")).toBe("RECOVERY");
+    expect(detectIntent("what should I eat for energy?")).toBe("NUTRITION");
+    expect(detectIntent("i need motivation")).toBe("MOTIVATION");
+    expect(detectIntent("beat my record today")).toBe("PERSONAL_RECORD");
+    expect(detectIntent("banana pancakes recipe")).toBe("DEFAULT");
+  });
+
+  it("a greeting followed by content routes to the content intent", () => {
+    expect(detectIntent("hi how am i doing")).toBe("HOW_AM_I");
+    expect(detectIntent("hey, should I see a doctor?")).toBe("WELLNESS");
+  });
+
   it("keeps a greeting short instead of dumping the full numbers block", () => {
     const reply = composeCoachReply(ctx(), a, "SUPPORTIVE", "hi", "Tester");
     expect(reply.length).toBeLessThan(400);
@@ -141,6 +162,42 @@ describe("conversational coach intents", () => {
     const shown = assess(ctx({ overview: { ...ctx().overview, totalWorkouts: 8, totalReps: 160 } as unknown as CoachContext["overview"] }));
     const reply = composeCoachReply(ctx({ overview: { ...ctx().overview, totalWorkouts: 8, totalReps: 160 } as unknown as CoachContext["overview"] }), shown, "SCIENTIST", "what should I train?", "Tester");
     expect(reply).toContain("sets");
+  });
+
+  it("points to a real professional when the user asks about a doctor", () => {
+    const reply = composeCoachReply(ctx(), a, "SUPPORTIVE", "should I see a doctor?", "Tester");
+    expect(reply.toLowerCase()).toContain("not a doctor");
+    expect(reply.toLowerCase()).toContain("professional");
+  });
+
+  it("explains what the camera measures without diagnosing", () => {
+    const reply = composeCoachReply(ctx(), a, "SCIENTIST", "can you analyze my body?", "Tester");
+    expect(reply.toLowerCase()).toContain("joint angles");
+    expect(reply.toLowerCase()).toContain("medical screening");
+  });
+
+  it("improvement advice stays concrete and safe", () => {
+    const reply = composeCoachReply(ctx(), a, "SUPPORTIVE", "how can I improve?", "Tester");
+    expect(reply.toLowerCase()).toContain("improve");
+  });
+
+  it("suggests a replenishment plan for rest requests", () => {
+    const reply = composeCoachReply(ctx(), a, "SUPPORTIVE", "should I rest today?", "Tester");
+    expect(reply.toLowerCase()).toContain("recovery");
+  });
+
+  it("the default fallback offers clear next steps", () => {
+    const reply = composeCoachReply(ctx(), a, "SUPPORTIVE", "banana pancakes recipe", "Tester");
+    expect(reply).toContain("how am I doing?");
+  });
+
+  it("never emits an em dash in any reply direction", () => {
+    const messages = ["hi", "how am I doing?", "what should I train?", "should I see a doctor?", "my shoulder hurts", "how can I improve?", "i need motivation", "what stretches for a warm up?", "banana pancakes recipe", "thanks"];
+    for (const msg of messages) {
+      const reply = composeCoachReply(ctx(), a, "SUPPORTIVE", msg, "Tester");
+      expect(reply).not.toContain("\u2014");
+      expect(reply).not.toContain("👋");
+    }
   });
 });
 

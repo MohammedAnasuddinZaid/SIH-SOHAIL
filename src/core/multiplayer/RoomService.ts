@@ -42,7 +42,7 @@ async function toRoomPlayer(playerId: PlayerId, host: boolean): Promise<RoomPlay
   return {
     playerId,
     username: p?.username ?? playerId,
-    avatar: p?.avatar ?? { icon: "🔥", frame: "frame_void", background: "bg_volt", accent: "#f59e0b" },
+    avatar: p?.avatar ?? { icon: "R", frame: "frame_void", background: "bg_volt", accent: "#f59e0b" },
     level: level.currentLevel,
     rankDisplay: rankDisplayName(rating.rank, rating.division),
     ready: false,

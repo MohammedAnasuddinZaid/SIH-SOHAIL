@@ -14,11 +14,11 @@ interface BrandingConfig {
 const env = (import.meta.env ?? {}) as Record<string, string | undefined>;
 
 export const branding: BrandingConfig = {
-  APP_NAME: env.VITE_APP_NAME ?? "REP ARENA",
-  APP_TAGLINE: env.VITE_APP_TAGLINE ?? "Turn every push-up into a competition.",
+  APP_NAME: env.VITE_APP_NAME ?? "RepRush",
+  APP_TAGLINE: env.VITE_APP_TAGLINE ?? "Your reps are your score.",
   APP_DESCRIPTION:
-    "A competitive fitness game. Your camera reads your push-ups, your reps are your score, and the arena never ends.",
-  APP_VERSION: "1.0.0",
+    "RepRush counts your push-ups and squats live from your camera, then turns every rep into levels, ranks, battles and streaks. Private, offline-first, no accounts.",
+  APP_VERSION: "1.1.0",
   APP_LOGO: "/icons/icon.svg",
   PLAYER_ID_PREFIX: "REP",
   DEFAULT_REGION: "GLOBAL",

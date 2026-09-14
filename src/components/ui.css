@@ -1,11 +1,11 @@
-/* REP ARENA UI kit — shared component styles */
+/* RepRush UI kit - shared component styles */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
   border: 0;
-  border-radius: var(--r-full);
+  border-radius: var(--r-md);
   font-weight: 600;
   font-size: var(--fs-md);
   line-height: 1;
@@ -35,7 +35,7 @@
 .btn--primary {
   background: var(--grad-brand);
   color: var(--brand-ink);
-  box-shadow: var(--shadow-1), inset 0 0 0 0 transparent;
+  box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 0 rgba(200, 60, 0, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -49,10 +49,15 @@
   pointer-events: none;
 }
 .btn--primary:hover {
-  box-shadow: var(--shadow-glow-strong);
+  box-shadow: var(--shadow-glow-strong), inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 0 rgba(200, 60, 0, 0.2);
+  transform: translateY(-2px);
 }
 .btn--primary:hover::after {
   transform: translateX(120%);
+}
+.btn--primary:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: var(--shadow-1), inset 0 2px 4px rgba(0,0,0,0.15);
 }
 .btn--primary:disabled::after {
   display: none;
@@ -91,13 +96,15 @@
   border: var(--border-soft);
   border-radius: var(--r-xl);
   padding: var(--sp-5);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--shadow-1), 0 1px 0 rgba(255,255,255,0.6) inset;
   transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  perspective: 800px;
+  transform-style: preserve-3d;
 }
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px) rotateX(2deg);
   border-color: rgba(255, 122, 26, 0.28);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-2), 0 2px 0 rgba(255,255,255,0.5) inset, 0 8px 24px rgba(239, 90, 16, 0.08);
 }
 .card--pad-sm {
   padding: var(--sp-4);
@@ -111,7 +118,7 @@
   align-items: center;
   gap: var(--sp-1);
   padding: 0.2rem 0.55rem;
-  border-radius: var(--r-full);
+  border-radius: var(--r-sm);
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -261,7 +268,7 @@
   align-items: center;
   gap: var(--sp-2);
   padding: 0.32rem 0.75rem;
-  border-radius: var(--r-full);
+  border-radius: var(--r-md);
   background: var(--bg-2);
   border: 1px solid var(--border-strong);
   color: var(--brand);

@@ -90,6 +90,7 @@ export class SquatRepEngine {
   private lostAt: number | null = null;
   private inRepFlag = false;
   private hipToleranceOverride: number | null = null;
+  private topAngleOverride: number | null = null;
 
   constructor(private config: SquatEngineConfig) {}
 
@@ -97,11 +98,23 @@ export class SquatRepEngine {
     this.hipToleranceOverride = tolerance;
   }
 
+  /**
+   * Locks the rep engine to the user's actual standing pose, measured during
+   * calibration. Without this, a camera angle that reads the standing knee at
+   * e.g. 160deg never reaches the fixed 168deg "TOP" threshold and no squat is
+   * ever counted. Clamped so a bad/occluded read can't wreck validation.
+   */
+  calibrate(observedTopAngle: number): void {
+    if (!Number.isFinite(observedTopAngle)) return;
+    this.topAngleOverride = Math.max(90, Math.min(178, observedTopAngle));
+  }
+
   get effective(): EffectiveThresholds {
     const s = this.config.strictness;
     const baseTol = this.hipToleranceOverride ?? this.config.hipTolerance;
+    const baseTop = this.topAngleOverride ?? this.config.topAngle;
     return {
-      topThreshold: this.config.topAngle - s * 4,
+      topThreshold: baseTop - s * 4,
       bottomThreshold: this.config.bottomAngle + s * (12 - 8 * s),
       hipTolerance: baseTol * (1 + (1 - s) * 0.35),
     };

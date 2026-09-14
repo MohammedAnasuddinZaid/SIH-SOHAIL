@@ -62,7 +62,7 @@ export async function sendFriendRequest(senderId: PlayerId, recipientId: PlayerI
   if (await isBlocked(senderId, recipientId)) throw new Error("BLOCKED");
   const rel = await relationBetween(senderId, recipientId);
   if (rel === "OUTGOING_PENDING") throw new Error("Request already sent.");
-  if (rel === "INCOMING_PENDING") throw new Error("This player already sent you a request — accept it instead.");
+  if (rel === "INCOMING_PENDING") throw new Error("This player already sent you a request - accept it instead.");
   const req: FriendRequest = { id: createId("fr"), senderId, recipientId, status: "PENDING", createdAt: Date.now() };
   const sent = (await requestsCol.get(`${senderId}:sent`)) ?? [];
   const recv = (await requestsCol.get(`${recipientId}:recv`)) ?? [];
@@ -186,13 +186,16 @@ export interface PlayerSearchHit extends PublicPlayerLookup {
   level: number;
   rankDisplay: string;
   avatar: { icon: string; frame: string; background: string; accent: string };
+  /** "directory" = found in the public RepRush registry, friend-linking is local-only. */
+  origin?: "local" | "directory";
+  region?: string | null;
 }
 
 export async function searchPlayers(query: string, selfId: PlayerId): Promise<PlayerSearchHit[]> {
   const q = query.trim();
   if (!q) return [];
   // exact player id lookup (highest priority)
-  if (/^#?REP-\d+$/i.test(q)) {
+  if (/^#?REP-\d+$/i.test(q) || /^#?REP-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(q)) {
     const normalized = q.toUpperCase().replace(/^#/, "");
     const found = await lookupByPlayerId(normalized);
     if (found && found.playerId !== selfId) {
@@ -213,7 +216,26 @@ export async function searchPlayers(query: string, selfId: PlayerId): Promise<Pl
     const hit = await toHit({ playerId: p.playerId, username: p.username });
     if (hit) hits.push(hit);
   }
-  return hits;
+  // Public directory results (server reachable + toggle on). Honest summary
+  // only: they exist on the device? No. We cannot route a local friend
+  // request to another browser, so directory hits are purely informational.
+  const { searchDirectory } = await import("./DirectoryClient");
+  const remote = await searchDirectory(q, selfId);
+  const seen = new Set(hits.map((h) => h.playerId));
+  for (const r of remote) {
+    if (seen.has(r.playerId)) continue;
+    seen.add(r.playerId);
+    hits.push({
+      playerId: r.playerId,
+      username: r.username,
+      level: r.level,
+      rankDisplay: r.rankDisplay,
+      avatar: r.avatar,
+      region: r.region ?? null,
+      origin: "directory",
+    });
+  }
+  return hits.slice(0, 12);
 }
 
 async function toHit(lookup: PublicPlayerLookup): Promise<PlayerSearchHit | null> {
@@ -226,7 +248,7 @@ async function toHit(lookup: PublicPlayerLookup): Promise<PlayerSearchHit | null
     username: p?.username ?? lookup.username,
     level: level.currentLevel,
     rankDisplay: rankDisplayName(rating.rank, rating.division),
-    avatar: p?.avatar ?? { icon: "🤖", frame: "frame_1", background: "bg_1", accent: "#8b5cf6" },
+    avatar: p?.avatar ?? { icon: "R", frame: "frame_1", background: "bg_1", accent: "#ff7a1a" },
   };
 }
 

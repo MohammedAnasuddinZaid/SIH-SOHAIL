@@ -19,8 +19,8 @@
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(ellipse 900px 600px at 50% 50%, #000 30%, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse 900px 600px at 50% 50%, #000 30%, transparent 75%);
@@ -56,7 +56,7 @@
   height: 260px;
   top: 40%;
   left: 58%;
-  background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.3), transparent 70%);
+  background: radial-gradient(circle at 50% 50%, rgba(15, 157, 143, 0.3), transparent 70%);
   opacity: 0.3;
   animation: orb-float 22s ease-in-out infinite 2s;
 }
@@ -83,8 +83,10 @@
   border: 1px solid var(--border-strong);
   border-radius: calc(var(--r-xl) + 4px);
   padding: clamp(var(--sp-5), 5vw, var(--sp-6));
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-2), 0 2px 0 rgba(255,255,255,0.5) inset;
   animation: auth-card-in var(--dur-slow) var(--ease-bounce);
+  transform-style: preserve-3d;
+  perspective: 900px;
 }
 .auth-card::before {
   content: "";
@@ -338,6 +340,11 @@
   padding: clamp(var(--sp-6), 6vw, var(--sp-8));
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-1), 0 1px 0 rgba(255,255,255,0.6) inset;
+  transition: box-shadow var(--dur-slow) var(--ease);
+}
+.home-hero:hover {
+  box-shadow: var(--shadow-2), 0 1px 0 rgba(255,255,255,0.6) inset, 0 12px 32px rgba(239, 90, 16, 0.06);
 }
 .hero-buttons {
   display: flex;
@@ -348,11 +355,16 @@
 .mode-card {
   border: 1px solid var(--border-soft);
   border-radius: var(--r-xl);
-  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+  box-shadow: var(--shadow-1), 0 1px 0 rgba(255,255,255,0.5) inset;
+}
+.mode-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-2), 0 1px 0 rgba(255,255,255,0.5) inset, 0 6px 16px rgba(239, 90, 16, 0.06);
 }
 .mode-card.is-selected {
   border-color: rgba(255, 122, 26, 0.55);
-  box-shadow: 0 0 0 1px rgba(255, 122, 26, 0.28), var(--glow-brand);
+  box-shadow: 0 0 0 1px rgba(255, 122, 26, 0.28), var(--glow-brand), 0 2px 0 rgba(255,255,255,0.4) inset;
 }
 .mode-card.is-selected h3 {
   color: var(--brand);
@@ -481,4 +493,26 @@
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--brand);
+}
+
+/* ──────────────────────────── Legal ──────────────────────────── */
+.legal h2 {
+  font-size: var(--fs-lg);
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+.legal h2:first-child {
+  margin-top: 0;
+}
+.legal p,
+.legal li {
+  color: var(--text-1);
+  font-size: var(--fs-md);
+  line-height: 1.6;
+}
+.legal ul {
+  padding-left: 1.2rem;
+  margin: 0 0 var(--sp-3);
+}
+.legal li {
+  margin-bottom: var(--sp-2);
 }

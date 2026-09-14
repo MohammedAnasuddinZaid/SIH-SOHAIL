@@ -1,4 +1,4 @@
-/* REP ARENA app shell layout */
+/* RepRush app shell layout */
 .arena-bg {
   position: fixed;
   inset: 0;
@@ -22,6 +22,7 @@
   padding: var(--sp-4);
   gap: var(--sp-2);
   z-index: 40;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.04);
 }
 
 .sidebar__brand {
@@ -45,7 +46,7 @@
   align-items: center;
   gap: var(--sp-3);
   padding: 0.7rem 0.9rem;
-  border-radius: var(--r-full);
+  border-radius: var(--r-md);
   color: var(--text-1);
   font-weight: 600;
   font-size: var(--fs-sm);
@@ -124,6 +125,33 @@
   gap: var(--sp-5);
 }
 
+/* Footer */
+.app-footer {
+  max-width: var(--content-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-6) var(--sp-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  border-top: var(--border-soft);
+}
+.app-footer nav {
+  display: flex;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+.app-footer a {
+  color: var(--text-2);
+}
+.app-footer a:hover {
+  color: var(--brand);
+}
+
 /* Bottom nav (mobile) */
 .bottom-nav {
   position: fixed;
@@ -176,6 +204,15 @@
   .content {
     padding: var(--sp-4);
   }
+  .app-footer {
+    padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  }
+}
+
+.install-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 /* Section title helper (used with cards) */

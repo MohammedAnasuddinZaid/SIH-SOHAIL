@@ -7,6 +7,13 @@ export interface CVConfiguration {
   landmarkVisibilityThreshold: number;
   singlePersonThreshold: number;
   multiPersonThreshold: number;
+  /**
+   * Confidence floor for the rep engines' tracking-gate. Kept below the pose
+   * gate on purpose: landmark visibility (per-joint) stays the hard requirement,
+   * but a cluttered background must not zero out every rep just because the
+   * global pose probability dips.
+   */
+  repEngineConfidenceThreshold: number;
 
   // angles (degrees)
   topElbowAngle: number;
@@ -56,26 +63,27 @@ export interface CVConfiguration {
 }
 
 export const cvConfig: CVConfiguration = {
-  poseConfidenceThreshold: 0.5,
-  landmarkVisibilityThreshold: 0.55,
-  singlePersonThreshold: 0.6,
-  multiPersonThreshold: 0.7,
+  poseConfidenceThreshold: 0.3,
+  landmarkVisibilityThreshold: 0.4,
+  singlePersonThreshold: 0.5,
+  multiPersonThreshold: 0.6,
+  repEngineConfidenceThreshold: 0.3,
 
   topElbowAngle: 162,
   bottomElbowAngle: 88,
 
   squat: {
     topKneeAngle: 168,
-    bottomKneeAngle: 95,
-    minHipAngle: 55,
+    bottomKneeAngle: 100,
+    minHipAngle: 50,
     maxHipAngle: 178,
-    hipDriftTolerance: 0.34,
+    hipDriftTolerance: 0.38,
   },
 
-  minRepDuration: 380,
-  maxRepDuration: 6000,
-  minDownDuration: 120,
-  minUpDuration: 120,
+  minRepDuration: 300,
+  maxRepDuration: 8000,
+  minDownDuration: 80,
+  minUpDuration: 80,
 
   hipAlignmentTolerance: 0.22,
   elbowWidthFactor: 1.4,

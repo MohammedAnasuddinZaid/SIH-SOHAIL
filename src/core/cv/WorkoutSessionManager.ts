@@ -139,7 +139,7 @@ export class WorkoutSessionManager {
             minDownDuration: cvConfig.minDownDuration,
             minUpDuration: cvConfig.minUpDuration,
             hipTolerance: cvConfig.squat.hipDriftTolerance,
-            confidenceThreshold: cvConfig.poseConfidenceThreshold + 0.05,
+            confidenceThreshold: cvConfig.repEngineConfidenceThreshold,
             strictness: strict,
           })
         : new PushUpRepEngine({
@@ -150,7 +150,7 @@ export class WorkoutSessionManager {
             minDownDuration: cvConfig.minDownDuration,
             minUpDuration: cvConfig.minUpDuration,
             hipTolerance: cvConfig.hipAlignmentTolerance,
-            confidenceThreshold: cvConfig.poseConfidenceThreshold + 0.05,
+            confidenceThreshold: cvConfig.repEngineConfidenceThreshold,
             strictness: strict,
           });
   }
@@ -296,7 +296,9 @@ export class WorkoutSessionManager {
           visibilityThreshold: cvConfig.landmarkVisibilityThreshold,
           hipTolerance: cvConfig.hipAlignmentTolerance,
         });
-        this.calibrationSamples.push(geo.elbowAngle);
+        // Squats are measured by knee bend, push-ups by elbow bend. Calibrating
+        // on the wrong joint was why squats often never started counting.
+        this.calibrationSamples.push(this.exercise === "SQUAT" ? geo.kneeAngle : geo.elbowAngle);
         if (geo.side) sideCounts[geo.side] += 1;
         if (geo.requiredLandmarksVisible) this.onEvent({ type: "POSE_DETECTED", confidence: geo.trackingConfidence });
         else this.onEvent({ type: "POSE_LOST" });
@@ -306,15 +308,18 @@ export class WorkoutSessionManager {
       await nextFrame();
     }
     const sorted = [...this.calibrationSamples].sort((a, b) => a - b);
-    const median = sorted[Math.floor(sorted.length / 2)] ?? cvConfig.topElbowAngle;
+    const median = sorted[Math.floor(sorted.length / 2)] ?? this.defaultTopAngle();
     const stability = this.computeStability(sorted);
     // Lock the side that was visible most often during calibration so the
     // engine never flips between the left/right arm mid-rep.
     this.preferredSide =
       sideCounts.LEFT > sideCounts.RIGHT ? "LEFT" : sideCounts.RIGHT > sideCounts.LEFT ? "RIGHT" : null;
+    // Bind the engine's TOP threshold to the user's actual standing pose.
+    const observedTop = this.clampTopAngle(median);
+    this.engine.calibrate(observedTop);
     const profile: CalibrationProfile = {
-      observedTopAngle: Math.min(cvConfig.topElbowAngle, median + 6),
-      observedBottomAngle: cvConfig.bottomElbowAngle,
+      observedTopAngle: Math.round(observedTop),
+      observedBottomAngle: this.defaultBottomAngle(),
       hipTolerance: cvConfig.hipAlignmentTolerance * (stability > 0.7 ? 1 : 1.2),
       orientationScore: 0.5 + stability * 0.5,
       stability,
@@ -322,6 +327,20 @@ export class WorkoutSessionManager {
     };
     void this.onEvent({ type: "CALIBRATION_PROGRESS", progress: 1 });
     return profile;
+  }
+
+  private defaultTopAngle(): number {
+    return this.exercise === "SQUAT" ? cvConfig.squat.topKneeAngle : cvConfig.topElbowAngle;
+  }
+
+  private defaultBottomAngle(): number {
+    return this.exercise === "SQUAT" ? cvConfig.squat.bottomKneeAngle : cvConfig.bottomElbowAngle;
+  }
+
+  private clampTopAngle(a: number): number {
+    if (!Number.isFinite(a)) return this.defaultTopAngle();
+    const lo = this.exercise === "SQUAT" ? 110 : 120;
+    return Math.max(lo, Math.min(178, a));
   }
 
   private computeStability(sorted: number[]): number {
@@ -503,7 +522,7 @@ export class WorkoutSessionManager {
       // Pre-rep guidance: if body is roughly ready but shallow
       if (this.exercise === "SQUAT") {
         if (angle > -1 && angle < 165) {
-          this.feedback.emit({ id: "starting", code: "LOW_CONFIDENCE", message: "Get ready at the top — stand tall", priority: "GENERAL_TIP" });
+          this.feedback.emit({ id: "starting", code: "LOW_CONFIDENCE", message: "Get ready at the top, stand tall", priority: "GENERAL_TIP" });
         }
       } else if (angle > 75 && angle < 150) {
         this.feedback.emit({ id: "starting", code: "LOW_CONFIDENCE", message: "Get ready at the top position", priority: "GENERAL_TIP" });

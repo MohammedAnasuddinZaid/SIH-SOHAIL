@@ -29,7 +29,7 @@ export const DEFAULT_PRIVACY: PlayerPrivacy = {
 };
 
 export const DEFAULT_SETTINGS: UserSettings = {
-  theme: "DARK",
+  theme: "LIGHT",
   reducedMotion: false,
   soundEnabled: true,
   masterVolume: 0.8,

@@ -1,4 +1,4 @@
-// REP ARENA realtime relay — a tiny WebSocket hub.
+// RepRush realtime relay - a tiny WebSocket hub.
 // Purpose: enable real-time battles across DIFFERENT devices/browsers where
 // BroadcastChannel (same-browser tabs) cannot reach. It is a dumb packet relay:
 // it forwards JSON messages between sockets tagged with the same room id.
@@ -16,7 +16,7 @@ const rooms = new Map(); // roomId -> Set<WebSocket>
 
 const server = createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("REP ARENA relay running\n");
+  res.end("RepRush relay running\n");
 });
 
 const wss = new WebSocketServer({ server });
@@ -77,5 +77,5 @@ const heartbeat = setInterval(() => {
 wss.on("close", () => clearInterval(heartbeat));
 
 server.listen(PORT, () => {
-  console.log(`[relay] REP ARENA relay listening on ws://localhost:${PORT}`);
+  console.log(`[relay] RepRush relay listening on ws://localhost:${PORT}`);
 });

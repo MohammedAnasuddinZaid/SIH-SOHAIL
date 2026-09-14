@@ -108,3 +108,44 @@ describe("SquatRepEngine", () => {
     expect(evs.some((e) => e.type === "RESTORED")).toBe(true);
   });
 });
+
+describe("SquatRepEngine calibration", () => {
+  it("never reaches TOP when the standing pose sits below the fixed threshold", () => {
+    const engine = new SquatRepEngine(cfg);
+    // Standing knee reads 160°, the fixed 168° top needs >= 162° to go TOP.
+    engine.process(ok(160, 1000));
+    engine.process(ok(160, 1030));
+    expect(engine.status().state).toBe("READY");
+  });
+
+  it("binds TOP to the observed standing pose after calibrate()", () => {
+    const engine = new SquatRepEngine(cfg);
+    engine.calibrate(160);
+    engine.process(ok(160, 1000));
+    engine.process(ok(160, 1030));
+    expect(engine.status().state).toBe("TOP");
+  });
+
+  it("still counts a full rep after calibrating to a realistic standing angle", () => {
+    const engine = new SquatRepEngine({ ...cfg, minDownDuration: 120 });
+    engine.calibrate(160);
+    const evs = cleanRep(engine, 2000);
+    expect(evs.filter((e) => e.type === "VALID_REP")).toHaveLength(1);
+  });
+
+  it("ignores non-finite calibration input", () => {
+    const engine = new SquatRepEngine(cfg);
+    engine.calibrate(Number.NaN);
+    engine.process(ok(170, 1000));
+    engine.process(ok(170, 1030));
+    expect(engine.status().state).toBe("TOP");
+  });
+
+  it("clamps calibration into a sane working range", () => {
+    const engine = new SquatRepEngine(cfg);
+    engine.calibrate(40);
+    expect(engine.effective.topThreshold).toBeCloseTo(90 - cfg.strictness * 4, 5);
+    engine.calibrate(999);
+    expect(engine.effective.topThreshold).toBeCloseTo(178 - cfg.strictness * 4, 5);
+  });
+});

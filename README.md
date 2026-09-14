@@ -1,9 +1,9 @@
-# REP ARENA
+# RepRush
 
-Turn every push-up into a competition.
+Turn every push-up and squat into a competition.
 
-REP ARENA is a privacy-first, offline-capable fitness competition platform that
-counts push-ups (and squats) from your webcam in real time, then turns that
+RepRush is a privacy-first, offline-capable fitness competition platform that
+counts push-ups and squats from your webcam in real time, then turns that
 evidence into a full progression game: XP, levels, ranks, streaks, personal
 records, quests, achievements, live head-to-head battles, friends, and a
 personal AI fitness coach.
@@ -41,6 +41,10 @@ personal AI fitness coach.
   any OpenAI-compatible `/chat/completions` endpoint in Settings. It is a
   technique tool, not a medical device.
 - **PWA** — installable, with a service worker and offline-first storage.
+- **Optional public directory** — run the tiny zero-dependency
+  `server/app.mjs` and players can opt in to a shared "hall of fame" so others
+  can find them by username or player code. Only public profile fields are
+  stored; the server never logs IPs or camera data.
 
 ## Stack
 
@@ -67,6 +71,7 @@ Copy `.env.example` to `.env` and adjust as needed:
 | `VITE_APP_NAME` / `VITE_APP_TAGLINE` | Public branding at build time |
 | `VITE_REALTIME_RELAY_URL` | Optional WebSocket relay URL for cross-device battles |
 | `VITE_AI_COACH_ENDPOINT` | Optional OpenAI-compatible endpoint for the AI coach |
+| `VITE_DIRECTORY_URL` | Optional RepRush directory server base URL (defaults to same-origin) |
 
 `.env` is git-ignored — never commit secrets. In-app, the Settings page lets
 players configure their own coach endpoint/API key, stored locally.
@@ -80,6 +85,9 @@ npm run typecheck    # tsc -b --noEmit
 npm test             # run the vitest suite
 npm run lint         # alias for typecheck
 npm run relay        # run the realtime relay server on ws://localhost:8787
+npm run server       # run the optional directory server on http://localhost:8787
+npm run server:dev   # directory server with --watch
+npm run icons        # regenerate public/icons/{icon-192,icon-512}.png + icon.svg
 ```
 
 ### Multiplayer relay
@@ -131,6 +139,10 @@ src/
   stores/            zustand stores (auth, toast, …)
 server/
   relay-server.mjs   realtime WebSocket relay for cross-device battles
+  app.mjs            optional zero-dependency directory server (public search
+                     + coarse region via CDN headers, serves ./dist too)
+scripts/
+  gen-icons.mjs      regenerates the PWA icons
 public/              PWA assets (manifest, service worker, icons)
 tests/               vitest suite
 ```

@@ -59,20 +59,9 @@ export interface GeometryObservation {
   kneeAligned: boolean;
 }
 
-const SIDE_VIEW_TRACKED = [
-  TRACKED_LANDMARKS.leftShoulder,
-  TRACKED_LANDMARKS.rightShoulder,
-  TRACKED_LANDMARKS.leftElbow,
-  TRACKED_LANDMARKS.rightElbow,
-  TRACKED_LANDMARKS.leftWrist,
-  TRACKED_LANDMARKS.rightWrist,
-  TRACKED_LANDMARKS.leftHip,
-  TRACKED_LANDMARKS.rightHip,
-] as const;
-
 /**
  * Computes the push-up geometry from a 33-landmark frame.
- * Normalized coordinates (0..1, relative to image) — resolution-independent.
+ * Normalized coordinates (0..1, relative to image). Resolution-independent.
  */
 export function analyzeGeometry(
   landmarks: NormalizedLandmark[],
@@ -107,9 +96,12 @@ export function analyzeGeometry(
     return null;
   };
 
-  const requiredVisible = SIDE_VIEW_TRACKED.every((idx) => (landmarks[idx]?.visibility ?? 0) >= visThreshold * 0.8);
   const side = pickSide();
   const s = side ?? SIDES.RIGHT;
+  // Only require the SELECTED side's landmarks to be visible for rep tracking.
+  // Requiring both sides breaks side-view exercises where the far arm is occluded.
+  const sideLandmarks = [s.shoulderIdx, s.elbowIdx, s.wristIdx, s.hipIdx, s.kneeIdx, s.ankleIdx];
+  const requiredVisible = sideLandmarks.every((idx) => (landmarks[idx]?.visibility ?? 0) >= visThreshold * 0.7);
 
   const sh = landmarks[s.shoulderIdx];
   const el = landmarks[s.elbowIdx];

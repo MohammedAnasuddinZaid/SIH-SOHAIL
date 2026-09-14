@@ -88,6 +88,7 @@ export class PushUpRepEngine {
   private lostAt: number | null = null;
   private inRepFlag = false;
   private hipToleranceOverride: number | null = null;
+  private topAngleOverride: number | null = null;
 
   constructor(private config: RepEngineConfig) {}
 
@@ -95,11 +96,23 @@ export class PushUpRepEngine {
     this.hipToleranceOverride = tolerance;
   }
 
+  /**
+   * Locks the engine to the user's actual extended top pose, measured during
+   * calibration. A camera angle that reads full arm extension below the fixed
+   * value (e.g. 155deg vs 162deg) blocks the engine from ever re-entering TOP,
+   * so reps never finalize. Clamped for safety.
+   */
+  calibrate(observedTopAngle: number): void {
+    if (!Number.isFinite(observedTopAngle)) return;
+    this.topAngleOverride = Math.max(90, Math.min(178, observedTopAngle));
+  }
+
   get effective(): EffectiveThresholds {
     const s = this.config.strictness;
     const baseTol = this.hipToleranceOverride ?? this.config.hipTolerance;
+    const baseTop = this.topAngleOverride ?? this.config.topAngle;
     return {
-      topThreshold: this.config.topAngle - s * 4,
+      topThreshold: baseTop - s * 4,
       bottomThreshold: this.config.bottomAngle + s * (14 - 10 * s),
       hipTolerance: baseTol * (1 + (1 - s) * 0.35),
     };

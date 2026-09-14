@@ -173,8 +173,8 @@ export class MatchCoordinator {
       const simId = `sim_${host}` as PlayerId;
       players.push({
         playerId: simId,
-        username: "Sister Act — SIM",
-        avatar: { icon: "🧍", frame: "frame_void", background: "bg_volt", accent: "#f59e0b" },
+        username: "Sister Act (SIM)",
+        avatar: { icon: "S", frame: "frame_void", background: "bg_volt", accent: "#f59e0b" },
         level: Math.max(1, level.currentLevel - 1),
         rankDisplay: "SIMULATED",
       });

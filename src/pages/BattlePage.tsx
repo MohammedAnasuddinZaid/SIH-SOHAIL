@@ -97,7 +97,7 @@ export function BattlePage() {
             <Icon name="users" size={18} /> Create a room
           </h3>
           <p className="muted">
-            Host a real match. Give the code to a friend — they join on this device in a <strong>private/incognito window</strong>, or via
+            Host a real match. Give the code to a friend - they join on this device in a <strong>private/incognito window</strong>, or via
             the relay server on another device. Both of you must be ready.
           </p>
           <Button variant="accent" onClick={() => void createRoom()} disabled={busy || !playerId} block>
@@ -121,12 +121,12 @@ export function BattlePage() {
       <Card>
         <h3>How real battles work here</h3>
         <p>
-          REP ARENA is offline-first: there is no central game server yet. A room runs <strong>host-authoritative</strong> — the host’s tab
+          RepRush is offline-first: there is no central game server yet. A room runs <strong>host-authoritative</strong> - the host’s tab
           validates every rep event. Two tabs on the same machine need to be in <strong>different browser contexts</strong> (e.g. normal +
           incognito) so each can sign in as a different player. For cross-device play you can run the relay server included in this repo.
         </p>
         <p className="muted" style={{ fontSize: "var(--fs-sm)", margin: 0 }}>
-          Every rep count is produced by real on-device computer vision. When the camera can’t confirm form, the rep is rejected — no animal gets free points.
+          Every rep count is produced by real on-device computer vision. When the camera can’t confirm form, the rep is rejected - no animal gets free points.
         </p>
       </Card>
     </>
@@ -278,7 +278,7 @@ function LiveBattle({ ongoing, playerId, onExit }: LiveProps) {
   return (
     <div className="stack">
       <div className="row">
-        {ongoing.simulated ? <Badge tone="danger">SIMULATION — AI-paced rival</Badge> : <Badge tone="info">Live room {ongoing.code}</Badge>}
+        {ongoing.simulated ? <Badge tone="danger">SIMULATION - AI-paced rival</Badge> : <Badge tone="info">Live room {ongoing.code}</Badge>}
         <Badge tone="accent">{match?.kind}</Badge>
         {match?.status === "COUNTDOWN" ? <Badge tone="brand">Countdown {remaining}s</Badge> : null}
         {match?.status === "LIVE" ? <Badge tone="ok">LIVE · {liveLeft}s left</Badge> : null}
@@ -377,7 +377,7 @@ function LiveBattle({ ongoing, playerId, onExit }: LiveProps) {
           <h3>{match.winnerId === playerId ? "You win!" : !match.winnerId ? "It's a draw" : "Defeat"}</h3>
           <div className="grid-4">
             <Stat value={grant.xpTransactions.reduce((a, x) => a + x.amount, 0)} label="XP earned" />
-            <Stat value={grant.rating ? `${grant.rating.change >= 0 ? "+" : ""}${grant.rating.change}` : "—"} label="Rating" />
+            <Stat value={grant.rating ? `${grant.rating.change >= 0 ? "+" : ""}${grant.rating.change}` : "·"} label="Rating" />
             <Stat value={grant.newPRs.length} label="New PRs" />
             <Stat value={grant.levelUps.length} label="Level ups" />
           </div>

@@ -27,7 +27,13 @@ export type IconName =
   | "x"
   | "copy"
   | "eye"
-  | "eye-off";
+  | "eye-off"
+  | "download"
+  | "sun"
+  | "moon"
+  | "external"
+  | "file-text"
+  | "scale";
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {
   name: IconName;
@@ -176,6 +182,52 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="m2.5 2.5 19 19" />
       <path d="M10.6 4.5A9.8 9.8 0 0 1 12 4.5c6.5 0 10 7 10 7a17 17 0 0 1-2.6 3.5" />
       <path d="M6.6 6.6A16.5 16.5 0 0 0 2 11.5s3.5 7 10 7a9.6 9.6 0 0 0 3.5-.7" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M12 15V3" />
+    </>
+  ),
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.9 4.9 1.4 1.4" />
+      <path d="m17.7 17.7 1.4 1.4" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m4.9 19.1 1.4-1.4" />
+      <path d="m17.7 6.3 1.4-1.4" />
+    </>
+  ),
+  moon: <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />,
+  external: (
+    <>
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </>
+  ),
+  "file-text": (
+    <>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M16 13H8" />
+      <path d="M16 17H8" />
+      <path d="M10 9H8" />
+    </>
+  ),
+  scale: (
+    <>
+      <path d="M12 3v18" />
+      <path d="M5 7h14" />
+      <path d="M6 21h12" />
+      <path d="m6 7-3 7a3 3 0 0 0 6 0z" />
+      <path d="m18 7-3 7a3 3 0 0 0 6 0z" />
     </>
   ),
 };

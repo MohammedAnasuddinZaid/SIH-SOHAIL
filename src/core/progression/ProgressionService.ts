@@ -1,5 +1,5 @@
 // Progression engine. All XP, levels, ranks, streaks, personal records,
-// achievements, quests and leaderboard aggregation live here — built with
+// achievements, quests and leaderboard aggregation live here - built with
 // server-style semantics (idempotency keys, source validation) so a real
 // backend can adopt the same rules later.
 
@@ -504,7 +504,7 @@ async function evaluateAchievements(playerId: PlayerId): Promise<UnlockResult> {
       await pushEvent(playerId, {
         type: "ACHIEVEMENT",
         title: "ACHIEVEMENT UNLOCKED",
-        body: `"${def.name}" — ${def.description}`,
+        body: `"${def.name}" - ${def.description}`,
         payload: { achievementId: def.id },
       });
       await socialActivity(playerId, "ACHIEVEMENT_UNLOCKED", "Unlocked an achievement", def.name);
@@ -736,7 +736,7 @@ export async function getLeaderboard(
     enriched.push({
       playerId: e.playerId,
       username: p?.username ?? e.playerId,
-      avatar: p?.avatar ?? { icon: "🤖", frame: "frame_1", background: "bg_1", accent: "#8b5cf6" },
+      avatar: p?.avatar ?? { icon: "R", frame: "frame_1", background: "bg_1", accent: "#ff7a1a" },
       level: (await levelProgress(e.playerId)).currentLevel,
       competitiveRank: rating.rank,
       division: rating.division,
@@ -873,7 +873,7 @@ export async function applyWorkoutResult(playerId: PlayerId, w: WorkoutResult): 
     await snapshotLeaderboard(playerId, "DAILY", "GLOBAL", lb.you.rank, lb.you.score);
   }
 
-  // my daily rank movement — compare with previous snapshot
+  // my daily rank movement - compare with previous snapshot
   await pushDailyMovement(playerId);
 
   return {

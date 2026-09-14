@@ -93,9 +93,9 @@ export function TrainPage() {
           </Field>
           <Field label="Form strictness">
             <select className="field__control" value={strictness} onChange={(e) => setStrictness(e.target.value as "RELAXED" | "NORMAL" | "STRICT")}>
-              <option value="RELAXED">Relaxed — easier depth/confidence</option>
-              <option value="NORMAL">Normal — competitive standard</option>
-              <option value="STRICT">Strict — clean, deep reps only</option>
+              <option value="RELAXED">Relaxed - easier depth/confidence</option>
+              <option value="NORMAL">Normal - competitive standard</option>
+              <option value="STRICT">Strict - clean, deep reps only</option>
             </select>
           </Field>
         </div>

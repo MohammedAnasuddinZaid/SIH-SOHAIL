@@ -64,12 +64,12 @@ export class FeedbackManager {
 
 export const FEEDBACK_LIBRARY: Record<string, { message: string; priority: FeedbackPriority }> = {
   GET_LOWER: { message: "Go a little lower", priority: "FORM_WARNING" },
-  FULL_EXTENSION: { message: "Finish the rep — extend fully", priority: "FORM_WARNING" },
+  FULL_EXTENSION: { message: "Finish the rep - extend fully", priority: "FORM_WARNING" },
   KEEP_HIPS_LEVEL: { message: "Keep your hips level", priority: "FORM_WARNING" },
   STRAIGHTEN_BACK: { message: "Straighten your back", priority: "FORM_WARNING" },
   GOOD_REP: { message: "Good rep!", priority: "GENERAL_TIP" },
   PERFECT_FORM: { message: "Perfect form", priority: "GENERAL_TIP" },
-  TOO_FAST: { message: "Too fast — control the tempo", priority: "FORM_WARNING" },
+  TOO_FAST: { message: "Too fast - control the tempo", priority: "FORM_WARNING" },
   CAMERA_LOST: { message: "Camera lost", priority: "CAMERA_ERROR" },
   BODY_OUT_OF_FRAME: { message: "Move into frame", priority: "BODY_NOT_VISIBLE" },
   REP_INVALID: { message: "Rep not counted", priority: "FORM_ERROR" },
@@ -83,5 +83,5 @@ export const FEEDBACK_LIBRARY: Record<string, { message: string; priority: Feedb
   INCOMPLETE_MOVEMENT: { message: "Complete the full movement", priority: "FORM_WARNING" },
   UNRECOGNIZED_MOVEMENT: { message: "Full push-up only", priority: "FORM_ERROR" },
   KNEE_DRIFT: { message: "Keep your knees over your toes", priority: "FORM_WARNING" },
-  TORSO_LEAN: { message: "Sit your hips back — chest up", priority: "FORM_WARNING" },
+  TORSO_LEAN: { message: "Sit your hips back - chest up", priority: "FORM_WARNING" },
 };

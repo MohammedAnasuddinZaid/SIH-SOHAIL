@@ -4,7 +4,9 @@ import { branding } from "../config/branding";
 import { useAuthStore } from "../stores/authStore";
 import { useNotifStore, useUnreadCount } from "../stores/notificationStore";
 import { AvatarIcon } from "./Primitives";
+import { ThemeToggle } from "./ThemeToggle";
 import { Icon, type IconName } from "./Icons";
+import { syncPlayerToDirectory } from "../core/social/directorySync";
 import "./layout.css";
 
 const ArenaBackground = lazy(() => import("./ArenaBackground").then((m) => ({ default: m.ArenaBackground })));
@@ -57,7 +59,9 @@ function PageTitle() {
                     ? "Profile"
                     : pathname.startsWith("/settings")
                       ? "Settings"
-                      : "REP ARENA";
+                      : pathname.startsWith("/privacy") || pathname.startsWith("/terms")
+                        ? "Legal"
+                        : "RepRush";
   return <span className="topbar__title">{title}</span>;
 }
 
@@ -72,6 +76,7 @@ export function AppLayout() {
     if (!playerId) return;
     const unsub = subscribe(playerId);
     void refresh();
+    void syncPlayerToDirectory(playerId);
     return unsub;
   }, [playerId, subscribe, refresh]);
 
@@ -116,6 +121,7 @@ export function AppLayout() {
         <header className="topbar">
           <PageTitle />
           <div className="topbar__spacer" />
+          <ThemeToggle />
           {player ? (
             <NavLink to="/profile" className="topbar__user">
               <AvatarIcon name={player.username} size="sm" />
@@ -126,6 +132,15 @@ export function AppLayout() {
         <main className="content">
           <Outlet />
         </main>
+        <footer className="app-footer">
+          <span>
+            {branding.APP_NAME} v{branding.APP_VERSION}
+          </span>
+          <nav>
+            <NavLink to="/privacy">Privacy Policy</NavLink>
+            <NavLink to="/terms">Terms &amp; Conditions</NavLink>
+          </nav>
+        </footer>
       </div>
 
       <nav className="bottom-nav">

@@ -212,8 +212,8 @@ export function WorkoutPage() {
           <h3>How a session works</h3>
           <p>
             {exercise === "SQUAT"
-              ? "First your pose is calibrated — stand tall in your squat (top) position and hold for a moment. Then you get a 3-second countdown and the engine counts validated squats by tracking your knee depth and torso control. Your camera feed is processed entirely on this device."
-              : "First your pose is calibrated — get into an extended plank (top) position and hold it for a moment. Then you get a 3-second countdown and the engine counts validated push-ups. Your camera feed is processed entirely on this device."}
+              ? "First your pose is calibrated - stand tall in your squat (top) position and hold for a moment. Then you get a 3-second countdown and the engine counts validated squats by tracking your knee depth and torso control. Your camera feed is processed entirely on this device."
+              : "First your pose is calibrated - get into an extended plank (top) position and hold it for a moment. Then you get a 3-second countdown and the engine counts validated push-ups. Your camera feed is processed entirely on this device."}
           </p>
           <div className="row">
             <Button variant="primary" onClick={() => void startCalibration()}>Start calibration</Button>
@@ -225,7 +225,7 @@ export function WorkoutPage() {
       {phase === "READY" ? (
         <Card>
           <h3>Pose calibrated</h3>
-          <p>Engine ready. Your camera has your pose locked. You get {countdown !== null ? countdown : ""} seconds — then go.</p>
+          <p>Engine ready. Your camera has your pose locked. You get {countdown !== null ? countdown : ""} seconds - then go.</p>
           <div className="row">
             <Button variant="primary" size="lg" onClick={startRun}><Icon name="play" size={18} /> Go ({countdown ?? 3})</Button>
             <Button variant="ghost" onClick={() => navigate("/train")}>Back</Button>

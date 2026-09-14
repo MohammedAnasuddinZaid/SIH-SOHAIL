@@ -14,6 +14,7 @@ import { CoachPage } from "./pages/CoachPage";
 import { SocialPage } from "./pages/SocialPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { PrivacyPage, TermsPage } from "./pages/LegalPage";
 import { Skeleton } from "./components/Primitives";
 
 function BootGate({ children }: { children: ReactNode }) {
@@ -59,6 +60,8 @@ export default function App() {
             <Route path="/social" element={<SocialPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -6,7 +6,7 @@ import { grantRandomSession } from "./workout-fixture";
 const PID = "REP-99990001";
 
 beforeEach(async () => {
-  // Clean all REP ARENA namespaces for a hermetic test run.
+  // Clean all RepRush namespaces for a hermetic test run.
   const keys: string[] = [];
   for (let i = 0; i < window.localStorage.length; i++) {
     const k = window.localStorage.key(i);

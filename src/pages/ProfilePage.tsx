@@ -67,7 +67,7 @@ export function ProfilePage() {
           <div style={{ flex: 1 }}>
             <h3 style={{ margin: 0 }}>{player.username}</h3>
             <div className="row">
-              <Badge tone="brand">Level {lvl?.currentLevel ?? "—"}</Badge>
+              <Badge tone="brand">Level {lvl?.currentLevel ?? "·"}</Badge>
               <PlayerCodeChip code={player.playerId} />
               {player.title ? <Badge>{player.title}</Badge> : null}
             </div>
@@ -126,7 +126,7 @@ export function ProfilePage() {
                   <div style={{ flex: 1 }}>
                     <strong>{p.metric}</strong>
                     <div className="muted" style={{ fontSize: "var(--fs-xs)" }}>
-                      {p.achievedAt ? new Date(p.achievedAt).toLocaleDateString() : "—"}
+                      {p.achievedAt ? new Date(p.achievedAt).toLocaleDateString() : "·"}
                     </div>
                   </div>
                   <span className="mono" style={{ fontSize: "var(--fs-xl)", fontWeight: 700 }}>

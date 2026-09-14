@@ -108,9 +108,15 @@ export function SocialPage() {
                   <div className="muted mono" style={{ fontSize: "var(--fs-xs)" }}>{h.playerId}</div>
                 </div>
                 <div style={{ flex: 1 }} />
-                <Button variant="primary" size="sm" onClick={() => void addFriend(h.playerId)}>
-                  Add
-                </Button>
+                {h.origin === "directory" ? (
+                  <span className="muted" style={{ fontSize: "var(--fs-xs)" }}>
+                    <Badge tone="info">Directory</Badge> public profile, on-device friends only
+                  </span>
+                ) : (
+                  <Button variant="primary" size="sm" onClick={() => void addFriend(h.playerId)}>
+                    Add
+                  </Button>
+                )}
               </div>
             ))}
           </div>

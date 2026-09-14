@@ -50,7 +50,7 @@ export function AuthPage() {
           <p className="auth-tagline">No account. No password. No OTP.</p>
           <p className="auth-sub">
             Your device <i>is</i> your player. Every phone gets its own unique{" "}
-            <strong>REP-XXXX-XXXX</strong> code automatically — that code is how friends find you.
+            <strong>REP-XXXX-XXXX</strong> code automatically - that code is how friends find you.
           </p>
         </div>
 

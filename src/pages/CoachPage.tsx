@@ -86,7 +86,7 @@ export function CoachPage() {
         title={
           <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--sp-2)" }}>
             <Icon name={persona.icon as IconName} size={20} />
-            <span>{persona.name} — your AI coach</span>
+            <span>{persona.name} - your AI coach</span>
           </span>
         }
         hint={persona.description}
@@ -114,13 +114,13 @@ export function CoachPage() {
       <Card pad="sm" style={{ marginTop: "var(--sp-3)" }}>
         <div className="row" style={{ fontSize: "var(--fs-sm)" }}>
           <span className="muted">Kind mode</span>
-          <span style={{ color: "var(--brand)", fontWeight: 700 }}>Coach Nova — warm, encouraging</span>
+          <span style={{ color: "var(--brand)", fontWeight: 700 }}>Coach Nova - warm, encouraging</span>
           <span style={{ color: "var(--text-3)" }}>|</span>
           <span className="muted">Rude-tough mode</span>
-          <span style={{ color: "var(--danger)", fontWeight: 700 }}>Sergeant Rex — tough love</span>
+          <span style={{ color: "var(--danger)", fontWeight: 700 }}>Sergeant Rex - tough love</span>
           <span style={{ color: "var(--text-3)" }}>|</span>
           <span className="muted">Data mode</span>
-          <span style={{ color: "var(--accent)", fontWeight: 700 }}>Dr. Atlas — analytics</span>
+          <span style={{ color: "var(--accent)", fontWeight: 700 }}>Dr. Atlas - analytics</span>
         </div>
         <p className="muted" style={{ fontSize: "var(--fs-xs)", margin: 0 }}>
           The coach reads your real performance records: level, rank, streak, PRs, sessions, quests and battles. Switch

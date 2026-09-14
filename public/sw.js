@@ -1,7 +1,7 @@
-// REP ARENA service worker: offline-first app shell cache.
+// RepRush service worker: offline-first app shell cache.
 // Runtime fetches are never cached so performance stays fresh and private.
 
-const CACHE = "rep-arena-v1";
+const CACHE = "reprush-v1";
 const PRECACHE = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -36,7 +36,7 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(
           () =>
-            new Response("REP ARENA is offline. Open it while connected to load assets.", {
+            new Response("RepRush is offline. Open it while connected to load assets.", {
               status: 503,
               headers: { "Content-Type": "text/plain" },
             }),

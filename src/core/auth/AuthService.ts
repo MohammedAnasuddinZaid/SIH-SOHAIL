@@ -389,7 +389,7 @@ export async function signInWithGoogle(identity: GoogleIdentity): Promise<Google
     if (existing.provider === "password") {
       throw new AuthError(
         "CREDENTIALS_INVALID",
-        "This email already has a password account — sign in with your password instead."
+        "This email already has a password account. Sign in with your password instead."
       );
     }
     if (existing.googleId && existing.googleId !== googleId) {

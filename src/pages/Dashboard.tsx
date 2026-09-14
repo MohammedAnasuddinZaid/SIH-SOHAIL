@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/Button";
+import { InstallButton } from "../components/InstallButton";
 import { Badge, Card, ProgressBar, Stat } from "../components/Primitives";
 import { SectionTitle } from "../components/Primitives";
 import { Icon } from "../components/Icons";
@@ -48,7 +49,7 @@ export function Dashboard() {
         </h1>
         <p style={{ maxWidth: 560 }}>
           {branding.APP_DESCRIPTION} Your camera counts your reps with computer vision, awards XP, ranks and trophies, and
-          puts you head-to-head against friends — your data never leaves this device.
+          puts you head-to-head against friends - your data never leaves this device.
         </p>
         <div className="hero-buttons">
           <Button variant="primary" size="lg" onClick={() => navigate("/train")}>
@@ -60,6 +61,7 @@ export function Dashboard() {
           <Button variant="ghost" size="lg" onClick={() => navigate("/coach")}>
             <Icon name="chat" size={18} /> Meet your coach
           </Button>
+          <InstallButton size="lg" />
         </div>
       </section>
 
@@ -67,7 +69,7 @@ export function Dashboard() {
         <>
           <section className="grid-4">
             <Card pad="sm">
-              <Stat value={lvl ? `${lvl.currentLevel}` : "—"} label={`Level · ${player?.username ?? "me"}`} />
+              <Stat value={lvl ? `${lvl.currentLevel}` : "·"} label={`Level · ${player?.username ?? "me"}`} />
               {lvl ? <ProgressBar value={lvl.xpIntoLevel} max={lvl.xpRequiredForNextLevel} className="mt-0" /> : null}
               <div className="muted" style={{ fontSize: "var(--fs-xs)", marginTop: "var(--sp-2)" }}>
                 {lvl ? `${lvl.xpIntoLevel}/${lvl.xpRequiredForNextLevel} XP` : ""}
@@ -78,7 +80,7 @@ export function Dashboard() {
               <Stat value={`${ov.streak.current}d`} label={`Streak · best ${ov.streak.best}d`} />
             </Card>
             <Card pad="sm">
-              <Stat value={ov.bestFormAvg > 0 ? `${ov.bestFormAvg}%` : "—"} label="Best form avg" />
+              <Stat value={ov.bestFormAvg > 0 ? `${ov.bestFormAvg}%` : "·"} label="Best form avg" />
               <Stat value={ov.bestSessionReps} label="Best session reps" />
             </Card>
             <Card pad="sm">
@@ -99,7 +101,7 @@ export function Dashboard() {
               />
               <div className="stack">
                 {ov.quests.length === 0 ? (
-                  <p className="muted">No daily quests yet — finish a workout to seed them.</p>
+                  <p className="muted">No daily quests yet - finish a workout to seed them.</p>
                 ) : (
                   ov.quests.slice(0, 3).map((q) => (
                     <div key={q.id} className="row">
