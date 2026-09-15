@@ -1,8 +1,10 @@
-// ZelusX service worker: offline-first app shell cache.
-// Runtime fetches are never cached so performance stays fresh and private.
+// ZELUX service worker: offline-first app shell cache.
+// SPA routes (/, /train, /workout, /battle, ...) always fall back to the cached
+// app shell on failure, so refreshing directly on a route never shows a 404.
 
-const CACHE = "zelusx-v2";
-const PRECACHE = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon.svg", "/zelusx-bg.png"];
+const CACHE = "zelux-v3";
+const APP_SHELL = "/index.html";
+const PRECACHE = ["/", APP_SHELL, "/manifest.webmanifest", "/icons/icon.svg", "/zelux-bg.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -25,6 +27,25 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return; // never intercept CDN/model traffic
   if (/\.(mp4|webm|m3u8)/.test(url.pathname)) return;
+
+  // SPA navigation: network-first, then the cached app shell. This is what keeps
+  // /workout, /battle etc. from ever bouncing into a server 404 on refresh.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(APP_SHELL, copy)).catch(() => {});
+            return res;
+          }
+          return caches.match(APP_SHELL) ?? res;
+        })
+        .catch(() => caches.match(APP_SHELL).then((shell) => shell || new Response("ZELUX is offline.", { status: 503 }))),
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
@@ -34,13 +55,10 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
           return res;
         })
-        .catch(
-          () =>
-            new Response("ZelusX is offline. Open it while connected to load assets.", {
-              status: 503,
-              headers: { "Content-Type": "text/plain" },
-            }),
-        );
+        .catch(() => {
+          if (request.destination === "document") return caches.match(APP_SHELL);
+          return new Response("", { status: 408 });
+        });
     }),
   );
 });

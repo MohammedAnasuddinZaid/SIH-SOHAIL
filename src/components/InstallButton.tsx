@@ -26,7 +26,7 @@ export function InstallButton({ size = "md", block = false }: { size?: "sm" | "m
       </Button>
       {showHint ? (
         <p className="muted" style={{ fontSize: "var(--fs-sm)", margin: "10px 0 0" }}>
-          Tap the Share button in Safari, then choose &quot;Add to Home Screen&quot; to install RepRush on your iPhone
+          Tap the Share button in Safari, then choose &quot;Add to Home Screen&quot; to install ZELUX on your iPhone
           or iPad.
         </p>
       ) : null}

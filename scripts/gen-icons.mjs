@@ -1,5 +1,5 @@
 // Generates public/icons/icon-192.png and icon-512.png (plus writes icon.svg
-// as the lossless source) with zero dependencies. Renders the RepRush mark:
+// as the lossless source) with zero dependencies. Renders the ZELUX mark:
 // an orange rounded tile with three white ascending bars (rep counter).
 
 import { deflateSync } from "node:zlib";

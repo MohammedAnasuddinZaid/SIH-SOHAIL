@@ -1,9 +1,9 @@
 {
-  "name": "zelusx",
+  "name": "zelux",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
-  "description": "ZelusX, a competitive fitness game built around real push-ups and squats, powered by browser-based computer vision.",
+  "description": "ZELUX, a competitive fitness game built around real push-ups and squats, powered by browser-based computer vision.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc -b --noEmit",
-    "relay": "node server/relay-server.mjs",
+    "relay": "node server/app.mjs",
     "server": "node server/app.mjs",
     "server:dev": "node --watch server/app.mjs",
     "icons": "node scripts/gen-icons.mjs"

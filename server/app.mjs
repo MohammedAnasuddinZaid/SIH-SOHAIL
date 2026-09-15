@@ -1,25 +1,34 @@
-// RepRush optional companion server (pure Node, zero dependencies).
+// ZELUX companion server (pure Node + ws, no framework).
 //
 //   npm run server          -> http://localhost:8787
 //   npm run server:dev      -> with --watch for hacking
+//   npm run relay           -> same server (relay is built in)
 //
-// What it provides:
+// What one process provides (single port, single domain):
+//   * WebSocket relay for cross-device battles (room-code directory + packet
+//     forwarding between phones/desktops that never share localStorage).
 //   * Player directory: a public "hall of fame" so players can find each other
-//     by username or player code. Only public profile fields are stored
-//     (playerId, username, level, rank display, avatar). Nothing else.
+//     by username, player code (ZX-....) or phone number. Only public profile
+//     fields are stored (playerId, username, level, rank display, avatar,
+//     optional phone). Nothing else.
 //   * Coarse IP region: derived ONLY from standard HTTP reverse-proxy headers
 //     (x-country-code / cf-ipcountry). No geo database, no IP logging, no
 //     address storage. If no proxy header is present the client sees "unknown".
-//   * Serves the built PWA from ./dist when present, so one process can host
-//     the app and its directory.
+//   * Serves the built PWA from ./dist when present (SPA fallback included),
+//     so one process can host the app, its relay and its directory.
 //
 // The app is fully functional without this server (offline-first). Every
 // endpoint is CORS-open so a local Vite dev server can talk to it.
+//
+// Deploy anywhere Node runs (Railway/Render/Fly/Dokku) and point the client at
+// it with VITE_REALTIME_RELAY_URL (or serve the app from here for zero config).
 
 import http from "node:http";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { WebSocketServer, WebSocket } from "ws";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 8787);
@@ -57,6 +66,10 @@ const COUNTRY_NAMES = {
   ES: "Spain",
   TR: "Turkey",
 };
+
+// ---------------------------------------------------------------------------
+// Directory registry (persisted to a JSON file)
+// ---------------------------------------------------------------------------
 
 let registry = new Map();
 let dirty = false;
@@ -99,8 +112,9 @@ function flushRegistry() {
 
 function sanitizePlayer(body) {
   if (!body || typeof body !== "object") return null;
-  const playerId = typeof body.playerId === "string" ? body.playerId.trim() : "";
-  if (!/^REP-[A-Z0-9]{4,12}$/i.test(playerId)) return null;
+  const playerId = typeof body.playerId === "string" ? body.playerId.trim().toUpperCase() : "";
+  // Accept branded codes: ZX-XXXX-XXXX (ZELUX) or legacy REP-XXXX-XXXX.
+  if (!/^[A-Z0-9]{2,3}-[A-Z0-9]{4,12}(?:-[A-Z0-9]{4})?$/i.test(playerId)) return null;
   const username =
     typeof body.username === "string"
       ? body.username.replace(/[\u0000-\u001f]/g, "").trim().slice(0, 24)
@@ -108,6 +122,10 @@ function sanitizePlayer(body) {
   if (!username) return null;
   const level = Math.min(999, Math.max(1, Number(body.level) || 1));
   const rankDisplay = typeof body.rankDisplay === "string" ? body.rankDisplay.slice(0, 40) : "Rookie III";
+  const phone =
+    typeof body.phone === "string"
+      ? body.phone.replace(/[^\d+]/g, "").slice(0, 15)
+      : "";
   const av = body.avatar && typeof body.avatar === "object" ? body.avatar : {};
   const avatar = {
     icon: typeof av.icon === "string" ? av.icon.slice(0, 4) : "R",
@@ -115,7 +133,7 @@ function sanitizePlayer(body) {
     background: typeof av.background === "string" ? av.background.slice(0, 32) : "bg_1",
     accent: /^#?[0-9a-f]{3,8}$/i.test(String(av.accent)) ? String(av.accent) : "#ff7a1a",
   };
-  return { playerId, username, level, rankDisplay, avatar };
+  return { playerId, username, level, rankDisplay, avatar, phone };
 }
 
 function collectBody(req, limitBytes = 1_000_000) {
@@ -189,13 +207,14 @@ function serveStatic(req, res, urlPath) {
     fs.createReadStream(filePath).pipe(res);
     return true;
   }
-  if (!path.extname(rel)) {
-    const fallback = path.join(DIST, "index.html");
-    if (fs.existsSync(fallback)) {
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
-      fs.createReadStream(fallback).pipe(res);
-      return true;
-    }
+  // SPA fallback: every unknown non-api path renders index.html. This is the
+  // same behaviour vercel.json gives the static deploy, so /workout, /battle,
+  // deep links and refreshes never 404.
+  const fallback = path.join(DIST, "index.html");
+  if (fs.existsSync(fallback)) {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+    fs.createReadStream(fallback).pipe(res);
+    return true;
   }
   return false;
 }
@@ -204,6 +223,21 @@ function countryFromHeaders(headers) {
   const code = (headers["x-country-code"] ?? headers["cf-ipcountry"] ?? "").toString().trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(code)) return null;
   return { code, name: COUNTRY_NAMES[code] ?? null };
+}
+
+// ---------------------------------------------------------------------------
+// WebSocket relay (cross-device battles + room-code directory)
+// ---------------------------------------------------------------------------
+
+const rooms = new Map(); // matchId -> Set<WebSocket>
+const roomCodes = new Map(); // code -> { matchId, hostId, roomId, settings, at }
+const ROOM_CODE_TTL = 1000 * 60 * 60 * 4;
+
+function pruneCodes() {
+  const now = Date.now();
+  for (const [code, rec] of roomCodes) {
+    if (now - (rec.at ?? 0) > ROOM_CODE_TTL) roomCodes.delete(code);
+  }
 }
 
 const server = http.createServer(async (req, res) => {
@@ -222,7 +256,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (p === "/api/meta" && req.method === "GET") {
-    json(res, 200, { name: "RepRush", version: "1.1.0", directory: true, region: "coarse-header-only" });
+    json(res, 200, { name: "ZELUX", version: "2.1.0", directory: true, relay: true, region: "coarse-header-only" });
     return;
   }
 
@@ -231,6 +265,7 @@ const server = http.createServer(async (req, res) => {
       ok: true,
       uptime: Math.round(process.uptime()),
       players: registry.size,
+      relayRooms: rooms.size,
       memory: Math.round(process.memoryUsage().rss / 1024 / 1024) + "MB",
     });
     return;
@@ -279,8 +314,15 @@ const server = http.createServer(async (req, res) => {
     let list = [...registry.values()];
     if (q.length >= 2) {
       const lower = q.toLowerCase();
+      const digits = q.replace(/[^\d]/g, "");
+      // Match username, player code OR phone digits.
       list = list
-        .filter((pl) => pl.username.toLowerCase().includes(lower) || pl.playerId.toLowerCase().includes(lower))
+        .filter(
+          (pl) =>
+            pl.username.toLowerCase().includes(lower) ||
+            pl.playerId.toLowerCase().includes(lower) ||
+            (pl.phone && digits.length >= 7 && pl.phone.replace(/[^\d]/g, "").includes(digits)),
+        )
         .sort((a, b) => {
           const aExact = a.username.toLowerCase().startsWith(lower) ? 0 : 1;
           const bExact = b.username.toLowerCase().startsWith(lower) ? 0 : 1;
@@ -288,18 +330,22 @@ const server = http.createServer(async (req, res) => {
           return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
         });
     }
-    json(res, 200, { players: list.slice(0, limit), total: registry.size });
+    json(res, 200, {
+      players: list.slice(0, limit).map(({ phone, ...pub }) => pub),
+      total: registry.size,
+    });
     return;
   }
 
   if (p.startsWith("/api/directory/player/") && req.method === "GET") {
-    const pid = decodeURIComponent(p.slice("/api/directory/player/".length));
+    const pid = decodeURIComponent(p.slice("/api/directory/player/".length)).toUpperCase();
     const player = registry.get(pid);
     if (!player) {
       json(res, 404, { ok: false, error: "player not found" });
       return;
     }
-    json(res, 200, { ok: true, player });
+    const { phone, ...pub } = player;
+    json(res, 200, { ok: true, player: pub });
     return;
   }
 
@@ -308,15 +354,126 @@ const server = http.createServer(async (req, res) => {
   json(res, 404, { ok: false, error: "not found" });
 });
 
+// --- WebSocket relay on the SAME port (server/app.mjs) ---
+
+const wss = new WebSocketServer({ server });
+
+function roomOf(ws) {
+  return ws.roomId ?? null;
+}
+
+wss.on("connection", (socket) => {
+  socket.isAlive = true;
+  socket.on("pong", () => {
+    socket.isAlive = true;
+  });
+  socket.on("message", (raw) => {
+    let msg;
+    try {
+      msg = JSON.parse(raw.toString());
+    } catch {
+      return;
+    }
+    if (!msg || typeof msg !== "object") return;
+
+    if (msg.kind === "ROOM_REGISTER" && msg.code) {
+      roomCodes.set(String(msg.code).toUpperCase(), {
+        matchId: msg.matchId,
+        hostId: msg.hostId,
+        roomId: msg.roomId,
+        settings: msg.settings ?? null,
+        at: Date.now(),
+      });
+      pruneCodes();
+      return;
+    }
+
+    if (msg.kind === "ROOM_LOOKUP" && msg.code) {
+      const code = String(msg.code).toUpperCase();
+      const rec = roomCodes.get(code);
+      if (rec && Date.now() - rec.at <= ROOM_CODE_TTL) {
+        socket.send(
+          JSON.stringify({
+            kind: "ROOM_FOUND",
+            code,
+            matchId: rec.matchId,
+            hostId: rec.hostId,
+            roomId: rec.roomId,
+            settings: rec.settings,
+          }),
+        );
+      } else {
+        socket.send(JSON.stringify({ kind: "ROOM_NOT_FOUND", code }));
+      }
+      return;
+    }
+
+    if (msg.kind === "JOIN" && msg.matchId) {
+      socket.roomId = msg.matchId;
+      if (!rooms.has(msg.matchId)) rooms.set(msg.matchId, new Set());
+      rooms.get(msg.matchId).add(socket);
+      return;
+    }
+
+    const rid = roomOf(socket);
+    if (!rid) return;
+    const peers = rooms.get(rid);
+    if (!peers) return;
+    for (const peer of peers) {
+      if (peer !== socket && peer.readyState === WebSocket.OPEN) {
+        peer.send(raw.toString());
+      }
+    }
+  });
+  socket.on("close", () => {
+    const rid = roomOf(socket);
+    if (!rid) return;
+    const peers = rooms.get(rid);
+    if (!peers) return;
+    peers.delete(socket);
+    if (peers.size === 0) rooms.delete(rid);
+  });
+});
+
+const heartbeat = setInterval(() => {
+  for (const ws of wss.clients) {
+    if (!ws.isAlive) {
+      ws.terminate();
+      continue;
+    }
+    ws.isAlive = false;
+    ws.ping();
+  }
+}, 30000);
+
+wss.on("close", () => clearInterval(heartbeat));
+
 process.on("exit", () => flushRegistry());
 process.on("SIGINT", () => {
+  flushRegistry();
+  process.exit(0);
+});
+process.on("SIGTERM", () => {
   flushRegistry();
   process.exit(0);
 });
 
 loadRegistry();
 server.listen(PORT, HOST, () => {
-  console.log(`RepRush server on http://${HOST}:${PORT}`);
+  console.log(`ZELUX server on http://${HOST}:${PORT}`);
   console.log(`Directory file: ${DATA_FILE}`);
   console.log(`Static build: ${fs.existsSync(DIST) ? DIST : "none (run npm run build first)"}`);
+  const nets = os.networkInterfaces();
+  const addrs = [];
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] ?? []) {
+      if (net.family === "IPv4" && !net.internal) addrs.push(net.address);
+    }
+  }
+  for (const a of addrs) {
+    console.log(`  LAN:    ws://${a}:${PORT}  http://${a}:${PORT}`);
+  }
+  if (process.env.PORT) {
+    console.log(`  Relay/WS and directory API are on the same origin http://${HOST}:${PORT}`);
+  }
 });

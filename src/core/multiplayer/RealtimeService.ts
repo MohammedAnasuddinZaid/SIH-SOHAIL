@@ -257,14 +257,21 @@ export class HybridRealtime implements RealtimeService {
 
 export function relayUrl(): string {
   const explicit = (import.meta.env.VITE_REALTIME_RELAY_URL as string | undefined)?.trim();
-  if (explicit) return explicit;
+  if (explicit) {
+    // Allow a bare host (e.g. "relay.example.com") or a full ws(s):// URL.
+    return /^wss?:\/\//i.test(explicit)
+      ? explicit
+      : `${window.location.protocol === "https:" ? "wss" : "ws"}://${explicit}`;
+  }
   try {
-    // Auto-discover: if the app is served from https://host, the relay is probed
-    // at wss://host:8787 — zero config for phone/desktop cross-device battles.
     const h = window.location.hostname;
     if (h && h !== "localhost" && h !== "127.0.0.1") {
+      // Same-origin: when the node server (server/app.mjs) serves the app it
+      // also hosts the WebSocket relay on the same port — zero config for
+      // phone/desktop cross-device battles behind one domain.
       const wsProto = window.location.protocol === "https:" ? "wss" : "ws";
-      return `${wsProto}://${h}:8787`;
+      const port = window.location.port;
+      return `${wsProto}://${h}${port ? `:${port}` : ""}`;
     }
   } catch {
     /* ignore */

@@ -63,29 +63,29 @@ export interface CVConfiguration {
 }
 
 export const cvConfig: CVConfiguration = {
-  poseConfidenceThreshold: 0.12,
-  landmarkVisibilityThreshold: 0.25,
+  poseConfidenceThreshold: 0.1,
+  landmarkVisibilityThreshold: 0.2,
   singlePersonThreshold: 0.5,
   multiPersonThreshold: 0.6,
-  repEngineConfidenceThreshold: 0.1,
+  repEngineConfidenceThreshold: 0.09,
 
   topElbowAngle: 158,
-  bottomElbowAngle: 92,
+  bottomElbowAngle: 95,
 
   squat: {
     topKneeAngle: 166,
-    bottomKneeAngle: 105,
+    bottomKneeAngle: 110,
     minHipAngle: 45,
     maxHipAngle: 178,
     hipDriftTolerance: 0.42,
   },
 
-  minRepDuration: 180,
+  minRepDuration: 150,
   maxRepDuration: 10000,
   minDownDuration: 50,
   minUpDuration: 50,
 
-  hipAlignmentTolerance: 0.3,
+  hipAlignmentTolerance: 0.34,
   elbowWidthFactor: 1.4,
 
   smoothingFactor: 0.5,

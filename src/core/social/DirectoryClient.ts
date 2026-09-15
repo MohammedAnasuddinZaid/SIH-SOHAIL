@@ -1,6 +1,6 @@
-// Optional public directory client. RepRush stays offline-first: nothing is
+// Optional public directory client. ZELUX stays offline-first: nothing is
 // sent anywhere unless (a) the user leaves the directory toggle on and
-// (b) the RepRush server (server/app.mjs) is reachable. The server keeps only
+// (b) the ZELUX server (server/app.mjs) is reachable. The server keeps only
 // public profile fields ("hall of fame" style) and never stores IP addresses
 // or camera data.
 
@@ -80,6 +80,7 @@ export async function registerWithDirectory(pub: {
   level: number;
   rankDisplay: string;
   avatar: DirectoryPlayer["avatar"];
+  phone?: string;
 }): Promise<boolean> {
   if (!isDirectoryEnabled()) return false;
   const data = await jsonFetch(`${baseUrl() || ""}/api/directory/register`, {

@@ -31,3 +31,6 @@ Thumbs.db
 
 # Local Coach memory / machine-specific files
 *.local.json
+
+# Runtime directory data (server/app.mjs persistence — never commit)
+server/data/

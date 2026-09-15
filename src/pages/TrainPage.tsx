@@ -24,7 +24,7 @@ export function TrainPage() {
   const [mode, setMode] = useState<BattleMode>("REP_RACE");
   const [duration, setDuration] = useState(60);
   const [target, setTarget] = useState(20);
-  const [strictness, setStrictness] = useState<"RELAXED" | "NORMAL" | "STRICT">("NORMAL");
+  const [strictness, setStrictness] = useState<"RELAXED" | "NORMAL" | "STRICT">("RELAXED");
   const [exercise, setExercise] = useState<ExerciseType>("PUSH_UP");
 
   const meta = MODE_META[mode];
@@ -93,9 +93,9 @@ export function TrainPage() {
           </Field>
           <Field label="Form strictness">
             <select className="field__control" value={strictness} onChange={(e) => setStrictness(e.target.value as "RELAXED" | "NORMAL" | "STRICT")}>
-              <option value="RELAXED">Relaxed - easier depth/confidence</option>
-              <option value="NORMAL">Normal - competitive standard</option>
-              <option value="STRICT">Strict - clean, deep reps only</option>
+              <option value="RELAXED">Relaxed - every rep counts</option>
+              <option value="NORMAL">Normal - balanced standard</option>
+              <option value="STRICT">Strict - deep, clean reps only</option>
             </select>
           </Field>
         </div>

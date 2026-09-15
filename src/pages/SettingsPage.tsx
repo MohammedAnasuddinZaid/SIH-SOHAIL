@@ -127,7 +127,7 @@ export function SettingsPage() {
       </Card>
 
       <Card>
-        <SectionTitle title="Appearance" hint="Light is the default. Dark is an option you can switch any time." />
+        <SectionTitle title="Appearance" hint="Dark is the default. Light is an option you can switch any time." />
         <div className="row">
           <span style={{ flex: 1 }}>Theme</span>
           <ThemeToggle label />
@@ -135,12 +135,12 @@ export function SettingsPage() {
       </Card>
 
       <Card>
-        <SectionTitle title="Install RepRush" hint="Install as a standalone app on your home screen. Works offline." />
+        <SectionTitle title="Install ZELUX" hint="Install as a standalone app on your home screen. Works offline." />
         <InstallButton size="md" />
       </Card>
 
       <Card>
-        <SectionTitle title="Online directory" hint="Make your public profile findable by other RepRush players." />
+        <SectionTitle title="Online directory" hint="Make your public profile findable by other ZELUX players." />
         <div className="row">
           <span style={{ flex: 1 }}>Share in directory</span>
           <Toggle on={dirOn} onChange={(v) => void toggleDirectory(v)} label="Directory sharing" />

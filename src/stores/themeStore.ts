@@ -1,13 +1,13 @@
-// RepRush theme store. Light is the default; dark is a user option. The theme
-// is applied before first paint by an inline script in index.html and kept in
-// sync here for the toggle UI.
+// ZELUX theme store. Dark is the default; light is an opt-in user choice. The
+// theme is applied before first paint by an inline script in index.html and
+// kept in sync here for the toggle UI.
 
 import { create } from "zustand";
 
 export type AppTheme = "light" | "dark";
 
 const KEY = "rep:theme";
-const META_THEME_DARK = "#0a0c10";
+const META_THEME_DARK = "#000000";
 const META_THEME_LIGHT = "#ffffff";
 
 function initialTheme(): AppTheme {
@@ -17,7 +17,7 @@ function initialTheme(): AppTheme {
   } catch {
     /* storage unavailable */
   }
-  return "light";
+  return "dark";
 }
 
 function applyTheme(theme: AppTheme): void {

@@ -1,4 +1,4 @@
-/* ZelusX app shell layout */
+/* ZELUX app shell layout */
 .arena-bg {
   position: fixed;
   inset: 0;
@@ -8,7 +8,7 @@
   background: #000;
 }
 
-/* Floating ZelusX glyph — the WhatsApp brand mark centered on the black arena */
+/* Floating ZELUX glyph — the WhatsApp brand mark centered on the black arena */
 .zgx-glyph {
   position: absolute;
   top: 50%;
@@ -33,6 +33,74 @@
   }
   50% {
     filter: brightness(1.28) saturate(1.2);
+  }
+}
+
+/* Counter-rotating mini glyph drifting behind the main mark */
+.zgx-glyph--mini {
+  width: min(30vw, 300px);
+  opacity: 0.07;
+  filter: drop-shadow(0 0 40px rgba(110, 164, 255, 0.35));
+}
+
+/* Slowly rotating volumetric light sweep across the stage */
+.zgx-scan {
+  position: absolute;
+  top: -40%;
+  left: -40%;
+  width: 180%;
+  height: 180%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 122, 26, 0.05) 20deg,
+    rgba(255, 255, 255, 0.02) 40deg,
+    rgba(110, 164, 255, 0.05) 60deg,
+    transparent 90deg,
+    transparent 360deg
+  );
+  animation: zgx-scan-spin 22s linear infinite;
+  will-change: transform;
+}
+@keyframes zgx-scan-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Breathing neon ring that pulses around the floating mark */
+.zgx-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(120vw, 900px);
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 122, 26, 0.18);
+  box-shadow:
+    0 0 40px rgba(255, 122, 26, 0.08) inset,
+    0 0 80px rgba(110, 164, 255, 0.06);
+  animation: zgx-ring-pulse 6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes zgx-ring-pulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.94);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.06);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zgx-scan,
+  .zgx-ring,
+  .zgx-glyph img {
+    animation: none;
   }
 }
 

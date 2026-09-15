@@ -45,14 +45,14 @@ export function PrivacyPage() {
       <H2>Online features and the directory</H2>
       <p>
         Friends search, battles between devices and the player directory are optional online features. When you leave the
-        directory toggle on and the RepRush server is reachable, your public profile (player code, username, level, rank
+        directory toggle on and the ZELUX server is reachable, your public profile (player code, username, level, rank
         and avatar) is published so other players can find you. You can disable sharing at any time in Settings; only the
         fields above are ever shared.
       </p>
 
       <H2>Region approximation</H2>
       <p>
-        When your request passes through a standard HTTP reverse proxy (for example a CDN), RepRush may read a coarse
+        When your request passes through a standard HTTP reverse proxy (for example a CDN), ZELUX may read a coarse
         country code supplied by that proxy to display on your profile. The server never stores IP addresses, does not use
         a geo-lookup database and cannot derive a precise location from this header alone.
       </p>
@@ -86,10 +86,10 @@ export function PrivacyPage() {
 export function TermsPage() {
   return (
     <Legal title="Terms & Conditions" updated="February 2026">
-      <H2>1. What RepRush is</H2>
+      <H2>1. What ZELUX is</H2>
       <p>
         {branding.APP_NAME} is a browser-based fitness game. Your camera detects your body movements so we can count
-        push-ups, squats and other exercises, and turn them into a game. By using RepRush you accept these terms.
+        push-ups, squats and other exercises, and turn them into a game. By using ZELUX you accept these terms.
       </p>
 
       <H2>2. Fitness safety</H2>
@@ -114,14 +114,14 @@ export function TermsPage() {
 
       <H2>4. Hackathon / demo use</H2>
       <p>
-        RepRush is distributed as a demonstration project. It is provided "as is" without warranty of any kind, express
+        ZELUX is distributed as a demonstration project. It is provided "as is" without warranty of any kind, express
         or implied, including fitness for a particular purpose. The authors are not liable for any injury, loss or
         damage arising from use of the software.
       </p>
 
       <H2>5. Accounts and identity</H2>
       <p>
-        RepRush uses device-based identities, not accounts. A player code is generated on your device and is not a
+        ZELUX uses device-based identities, not accounts. A player code is generated on your device and is not a
         credential; anyone who knows your code can find your public profile. Treat your code like a gamertag, not a
         password.
       </p>

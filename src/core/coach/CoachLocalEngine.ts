@@ -345,7 +345,7 @@ const PERSONA_LINES: Record<CoachPersonalityId, PersonaLines> = {
     farewell: "Go get the session. I'll be here when you're back.",
     pain: "Take this seriously: if something hurts, rest it. Listen to your body over your ego. Tomorrow you will be glad you did.",
     doctor: "I am a coaching tool, not a doctor. If you are hurt or worried about your health, see a real professional first. Nothing I say changes that.",
-    identity: "I'm your personal coach, built right into RepRush. I watch your form, count your reps, and help you get better. No gym required.",
+    identity: "I'm your personal coach, built right into ZELUX. I watch your form, count your reps, and help you get better. No gym required.",
     exerciseExplain: "That is a great exercise to learn. Focus on form over speed: controlled movement through a full range of motion is what builds strength safely.",
     howTo: "Getting started is the easiest part. Open a live session, pick an exercise, and follow the on-screen cues. I will count your reps and check your form in real time.",
     frequency: "For most people, 3 to 5 days per week works well. Start with 3 days, give yourself rest between sessions. Consistency beats intensity.",
@@ -594,7 +594,7 @@ export function composeCoachReply(_ctx: CoachContext, a: CoachAssessment, person
 
     case "EQUIPMENT":
       parts.push(lines.equipment);
-      parts.push("RepRush is built for bodyweight training. The camera on your phone or laptop is the only tool you need for form tracking and rep counting. Everything else is optional.");
+      parts.push("ZELUX is built for bodyweight training. The camera on your phone or laptop is the only tool you need for form tracking and rep counting. Everything else is optional.");
       parts.push("If you want to add resistance later, a simple resistance band and a pull-up bar go a long way.");
       break;
 

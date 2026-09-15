@@ -186,7 +186,7 @@ export interface PlayerSearchHit extends PublicPlayerLookup {
   level: number;
   rankDisplay: string;
   avatar: { icon: string; frame: string; background: string; accent: string };
-  /** "directory" = found in the public RepRush registry, friend-linking is local-only. */
+  /** "directory" = found in the public ZELUX registry, friend-linking is local-only. */
   origin?: "local" | "directory";
   region?: string | null;
 }
@@ -194,14 +194,16 @@ export interface PlayerSearchHit extends PublicPlayerLookup {
 export async function searchPlayers(query: string, selfId: PlayerId): Promise<PlayerSearchHit[]> {
   const q = query.trim();
   if (!q) return [];
-  // exact player id lookup (highest priority)
-  if (/^#?REP-\d+$/i.test(q) || /^#?REP-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(q)) {
+  // exact player id lookup (highest priority) — ZX-XXXX-XXXX (ZELUX) or legacy
+  // REP-XXXX-XXXX codes, with or without the leading '#'. If the player was
+  // found locally we stop there; otherwise we keep going so the server
+  // directory can answer for players on OTHER devices.
+  if (/^#?[A-Z]{2,3}-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}$/i.test(q)) {
     const normalized = q.toUpperCase().replace(/^#/, "");
     const found = await lookupByPlayerId(normalized);
     if (found && found.playerId !== selfId) {
       const hit = await toHit(found);
       if (hit) return [hit];
-      return [];
     }
   }
   // phone-number lookup (e.g. +91 98765 43210 / 9876543210)

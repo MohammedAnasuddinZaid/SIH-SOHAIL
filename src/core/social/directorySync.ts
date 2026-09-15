@@ -20,6 +20,7 @@ export async function syncPlayerToDirectory(playerId: PlayerId): Promise<boolean
     level: lvl.currentLevel,
     rankDisplay: rankDisplayName(rating.rank, rating.division),
     avatar: p.avatar,
+    phone: p.phone,
   });
   if (ok) cacheSync(playerId);
   return ok;
