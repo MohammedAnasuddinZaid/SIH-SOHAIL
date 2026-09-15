@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { devicePlayerId, isValidPlayerCode, parsePlayerCode } from "../src/core/auth/DeviceIdentity";
+import { branding } from "../src/config/branding";
 
-const CODE_RE = /^REP-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}$/;
+const CODE_RE = new RegExp(`^${branding.PLAYER_ID_PREFIX}-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}$`);
 
 describe("DeviceIdentity player codes", () => {
-  it("derives a deterministic REP-XXXX-XXXX code from a device id", () => {
+  it("derives a deterministic ZX-XXXX-XXXX code from a device id", () => {
     const id = "00112233445566778899aabbccddeeff";
     const code = devicePlayerId(id);
     expect(CODE_RE.test(code)).toBe(true);
@@ -30,9 +31,11 @@ describe("DeviceIdentity player codes", () => {
 
 describe("PlayerCode type", () => {
   it("accepts only the branded 2-group format", () => {
-    expect(isValidPlayerCode("REP-ABCD-2345")).toBe(true);
-    expect(isValidPlayerCode("REP-ABC-2345")).toBe(false);
-    expect(isValidPlayerCode("rep-abcd-2345")).toBe(false);
-    expect(isValidPlayerCode("REP-0OIL-2345")).toBe(false);
+    const prefix = branding.PLAYER_ID_PREFIX;
+    expect(isValidPlayerCode(`${prefix}-ABCD-2345`)).toBe(true);
+    expect(isValidPlayerCode("REP-ABCD-2345")).toBe(`${prefix}` === "REP");
+    expect(isValidPlayerCode(`${prefix}-ABC-2345`)).toBe(false);
+    expect(isValidPlayerCode(`${prefix.toLowerCase()}-abcd-2345`)).toBe(false);
+    expect(isValidPlayerCode(`${prefix}-0OIL-2345`)).toBe(false);
   });
 });

@@ -1,13 +1,13 @@
 {
-  "name": "RepRush",
-  "short_name": "RepRush",
+  "name": "ZelusX",
+  "short_name": "ZelusX",
   "description": "Counts your push-ups and squats live from your camera. Every rep earns levels, ranks, battles and streaks. Private and offline-first.",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "lang": "en",
   "categories": ["fitness", "games", "sports"],
   "icons": [

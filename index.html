@@ -1,28 +1,28 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta id="theme-color" name="theme-color" content="#ffffff" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+    <meta id="theme-color" name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="RepRush counts your push-ups and squats live from your camera, then turns every rep into levels, ranks, battles and streaks. Private, offline-first, no accounts."
+      content="ZelusX counts your push-ups and squats live from your camera, then turns every rep into levels, ranks, battles and streaks. Private, offline-first, no accounts."
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="RepRush" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>RepRush — Your reps are your score</title>
+    <meta name="apple-mobile-web-app-title" content="ZelusX" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>ZelusX — Your reps are your power</title>
     <link rel="manifest" href="/manifest.webmanifest" />
     <script>
-      // Apply saved theme before first paint to avoid a flash. Default: light.
+      // Apply saved theme before first paint to avoid a flash. Default: dark.
       (function () {
         try {
           var t = localStorage.getItem("rep:theme");
-          var theme = t === "dark" || t === "light" ? t : "light";
+          var theme = t === "dark" || t === "light" ? t : "dark";
           document.documentElement.setAttribute("data-theme", theme);
         } catch (e) {
-          document.documentElement.setAttribute("data-theme", "light");
+          document.documentElement.setAttribute("data-theme", "dark");
         }
       })();
     </script>

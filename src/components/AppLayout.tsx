@@ -61,7 +61,7 @@ function PageTitle() {
                       ? "Settings"
                       : pathname.startsWith("/privacy") || pathname.startsWith("/terms")
                         ? "Legal"
-                        : "RepRush";
+                        : "ZelusX";
   return <span className="topbar__title">{title}</span>;
 }
 

@@ -20,6 +20,7 @@ export type DetectionResult =
 export class PoseDetectionService {
   private landmarker: PoseLandmarker | null = null;
   private loadingPromise: Promise<void> | null = null;
+  private gpuDelegate: "GPU" | "CPU" | null = null;
   ready = false;
   private lastVideoTime = -1;
 
@@ -28,24 +29,39 @@ export class PoseDetectionService {
     if (this.loadingPromise || this.ready) return this.loadingPromise ?? Promise.resolve();
     this.loadingPromise = (async () => {
       const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE.wasmRoot);
-      this.landmarker = await PoseLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: MEDIAPIPE.poseModel,
-          delegate: "GPU",
-        },
-        runningMode: "VIDEO",
-        numPoses: 2,
-        minPoseDetectionConfidence: 0.3,
-        minPosePresenceConfidence: 0.3,
-        minTrackingConfidence: 0.3,
-      });
-      this.ready = true;
+      // Try GPU first for best performance, fall back to CPU if unavailable.
+      for (const delegate of ["GPU", "CPU"] as const) {
+        try {
+          this.landmarker = await PoseLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: MEDIAPIPE.poseModel,
+              delegate,
+            },
+            runningMode: "VIDEO",
+            numPoses: 1,
+            minPoseDetectionConfidence: 0.3,
+            minPosePresenceConfidence: 0.3,
+            minTrackingConfidence: 0.3,
+          });
+          this.ready = true;
+          this.gpuDelegate = delegate;
+          return;
+        } catch {
+          this.landmarker = null;
+        }
+      }
+      throw new Error("Pose detection could not initialize on this device. Ensure WebGL or WebAssembly is available.");
     })();
     return this.loadingPromise;
   }
 
   isReady(): boolean {
     return this.ready;
+  }
+
+  /** Which backend MediaPipe landed on: "GPU" (default) or "CPU" fallback. */
+  get delegate(): "GPU" | "CPU" | null {
+    return this.gpuDelegate;
   }
 
   /**

@@ -6,6 +6,7 @@ import { CameraService, CameraError, type CameraErrorCode } from "./CameraServic
 import { PoseDetectionService } from "./PoseDetectionService";
 import { LandmarkSmoother, MedianFilter } from "./LandmarkSmoother";
 import { analyzeGeometry, type BodySide, type GeometryObservation } from "./BodyGeometry";
+import type { NormalizedLandmark } from "./LandmarkMath";
 import { PushUpRepEngine, strictnessFactor, type RepEngineEvent, type RepEngineStatus as PushUpStatus } from "./PushUpRepEngine";
 import { SquatRepEngine, type RepEngineStatus as SquatStatus } from "./SquatRepEngine";
 import { FeedbackManager, FEEDBACK_LIBRARY, type FeedbackMessage } from "./FeedbackManager";
@@ -69,6 +70,8 @@ export interface SessionPulse {
   height?: number;
   status?: PushUpStatus | SquatStatus;
   geometry?: GeometryObservation;
+  landmarks?: NormalizedLandmark[];
+  autoCalibrating: boolean;
 }
 
 export interface WorkoutSessionOptions {
@@ -121,6 +124,13 @@ export class WorkoutSessionManager {
   private totalConfidence = 0;
   private confidenceSamples = 0;
   private disposed = false;
+  private autoCalibrating = false;
+  private autoCalDeadline = 0;
+  private autoCalSamples: number[] = [];
+  private autoCalSideCounts: Record<BodySide, number> = { LEFT: 0, RIGHT: 0 };
+  private calibrated = false;
+  private rollingExt: Array<{ t: number; angle: number }> = [];
+  private lastAdaptAt = 0;
 
   onEvent: (e: SessionRuntimeEvent) => void = () => {};
   onPulse: (p: SessionPulse) => void = () => {};
@@ -196,10 +206,18 @@ export class WorkoutSessionManager {
     return profile;
   }
 
+  async startLive(): Promise<void> {
+    this.state = "CALIBRATING";
+    this.onEvent({ type: "CALIBRATION_STARTED" });
+    await this.ensureCamera();
+    await this.ensurePose();
+    this.start();
+  }
+
   /** Begin the live workout (after countdown). */
   start(): void {
-    if (this.state !== "READY" && this.state !== "PAUSED" && this.state !== "RUNNING") return;
-    if (this.state === "READY") {
+    if (this.state !== "READY" && this.state !== "PAUSED" && this.state !== "RUNNING" && this.state !== "CALIBRATING") return;
+    if (this.state === "READY" || this.state === "CALIBRATING") {
       this.startedAt = performance.now();
       this.engine.reset();
       this.combo.reset();
@@ -213,6 +231,14 @@ export class WorkoutSessionManager {
       this.totalConfidence = 0;
       this.confidenceSamples = 0;
       this.state = "RUNNING";
+      if (!this.calibrated) {
+        this.autoCalibrating = true;
+        this.autoCalSamples = [];
+        this.autoCalSideCounts = { LEFT: 0, RIGHT: 0 };
+        this.rollingExt = [];
+        this.autoCalDeadline = performance.now() + 2500;
+        this.lastAdaptAt = performance.now();
+      }
     }
     if (this.raf === 0 && !this.disposed) this.loop(performance.now());
   }
@@ -329,6 +355,100 @@ export class WorkoutSessionManager {
     return profile;
   }
 
+  private collectAutoSample(angle: number, side: BodySide | null, _timestamp: number): void {
+    this.autoCalSamples.push(angle);
+    if (side) this.autoCalSideCounts[side] += 1;
+    // Provisional calibration after just a few frames so counting can start
+    // almost immediately (the finalize pass below refines it). Without this the
+    // engine kept its fixed top threshold for the first 2.5s and missed reps.
+    if (!this.calibratedPointer && this.autoCalSamples.length >= 4) {
+      const lo = this.exercise === "SQUAT" ? 110 : 120;
+      const plausible = this.autoCalSamples.filter((a) => Number.isFinite(a) && a > lo);
+      if (plausible.length >= 3) {
+        const peak = Math.max(...plausible);
+        const provisional = Math.max(lo, Math.min(172, peak - 3));
+        this.engine.calibrate(provisional);
+        this.calibratedPointer = true;
+      }
+    }
+    if (performance.now() >= this.autoCalDeadline || this.autoCalSamples.length >= 90) {
+      this.finalizeAutoCalibration();
+    }
+  }
+
+  private calibratedPointer = false;
+
+  private finalizeAutoCalibration(): void {
+    if (!this.autoCalibrating) return;
+    this.autoCalibrating = false;
+    const lo = this.exercise === "SQUAT" ? 110 : 120;
+    const valid = this.autoCalSamples.filter((a) => Number.isFinite(a) && a > lo);
+    let top: number;
+    if (valid.length >= 3) {
+      const sorted = [...valid].sort((a, b) => a - b);
+      const pIdx = Math.min(sorted.length - 1, Math.floor(sorted.length * 0.85));
+      top = Math.max(lo, Math.min(172, sorted[pIdx] - 3));
+    } else {
+      top = this.defaultTopAngle();
+    }
+    // Lock the body side that was seen most often so the engine never swaps
+    // between left/right mid-rep (which used to zero out whole sets).
+    this.preferredSide =
+      this.autoCalSideCounts.LEFT > this.autoCalSideCounts.RIGHT
+        ? "LEFT"
+        : this.autoCalSideCounts.RIGHT > this.autoCalSideCounts.LEFT
+          ? "RIGHT"
+          : null;
+    this.engine.calibrate(top);
+    this.calibrated = true;
+    this.calibratedPointer = true;
+    this.profile = {
+      observedTopAngle: Math.round(top),
+      observedBottomAngle: this.defaultBottomAngle(),
+      hipTolerance: cvConfig.hipAlignmentTolerance * 0.95,
+      orientationScore: 0.8,
+      stability: 0.8,
+      bodyScale: 1,
+    };
+    this.engine.setHipTolerance(this.profile.hipTolerance);
+    this.onEvent({ type: "CALIBRATION_COMPLETE", profile: this.profile });
+  }
+
+  private adaptMaxExtension(angle: number, timestamp: number): void {
+    if (!this.calibrated) return;
+    const t = timestamp;
+    this.rollingExt.push({ t, angle });
+    while (this.rollingExt.length > 0 && t - this.rollingExt[0].t > 2500) {
+      this.rollingExt.shift();
+    }
+    if (t - this.lastAdaptAt < 700 || this.rollingExt.length < 3) return;
+    this.lastAdaptAt = t;
+
+    const angles = this.rollingExt.map((e) => e.angle);
+    const sortedDesc = [...angles].sort((a, b) => b - a);
+    const peak = sortedDesc[Math.min(2, sortedDesc.length - 1)];
+    const lo = this.exercise === "SQUAT" ? 110 : 120;
+    const eff = this.engine.effective.topThreshold;
+
+    let target: number | null = null;
+    if (peak > eff + 3) {
+      target = peak - 2;
+    } else if (peak < eff - 5 && peak >= lo + 8) {
+      const nearTop = angles.filter((a) => a >= peak - 6).length;
+      if (nearTop >= 3) target = peak - 2;
+    }
+
+    if (target !== null) {
+      const clamped = Math.max(lo, Math.min(168, target));
+      if (clamped !== eff) {
+        this.engine.calibrate(clamped);
+        if (this.profile) {
+          this.profile = { ...this.profile, observedTopAngle: Math.round(clamped) };
+        }
+      }
+    }
+  }
+
   private defaultTopAngle(): number {
     return this.exercise === "SQUAT" ? cvConfig.squat.topKneeAngle : cvConfig.topElbowAngle;
   }
@@ -393,6 +513,7 @@ export class WorkoutSessionManager {
       visibilityThreshold: cvConfig.landmarkVisibilityThreshold,
       hipTolerance: this.profile?.hipTolerance ?? cvConfig.hipAlignmentTolerance,
       preferredSide: this.preferredSide ?? undefined,
+      exercise: this.exercise,
     });
 
     if (!geometry.requiredLandmarksVisible) {
@@ -404,6 +525,14 @@ export class WorkoutSessionManager {
 
     this.onEvent({ type: "POSE_DETECTED", confidence: geometry.trackingConfidence });
 
+    // Auto-calibrate and adapt during live counting
+    const currentAngle = this.exercise === "SQUAT" ? geometry.kneeAngle : geometry.elbowAngle;
+    if (this.autoCalibrating) {
+      this.collectAutoSample(currentAngle, geometry.side, timestamp);
+    } else {
+      this.adaptMaxExtension(currentAngle, timestamp);
+    }
+
     const events = this.processFrame(geometry, timestamp);
 
     for (const ev of events) this.handleEngineEvent(ev, timestamp);
@@ -414,7 +543,7 @@ export class WorkoutSessionManager {
     this.emitWarnings(geometry, events);
 
     // session duration
-    this.pulse(timestamp, geometry);
+    this.pulse(timestamp, geometry, landmarks);
   }
 
   /** Builds the engine observation for the active exercise and processes it. */
@@ -516,6 +645,7 @@ export class WorkoutSessionManager {
 
   private emitWarnings(geometry: GeometryObservation, events: RepEngineEvent[]): void {
     if (events.length > 0) return;
+    if (this.autoCalibrating) return;
     const eng = this.engine.status();
     const angle = this.exercise === "SQUAT" ? geometry.kneeAngle : geometry.elbowAngle;
     if (!eng.inRep) {
@@ -552,7 +682,7 @@ export class WorkoutSessionManager {
     }
   }
 
-  private pulse(timestamp: number, geometry?: GeometryObservation): void {
+  private pulse(timestamp: number, geometry?: GeometryObservation, landmarks?: NormalizedLandmark[]): void {
     const duration = this.startedAt ? timestamp - this.startedAt : 0;
     const avgForm = this.formScores.length > 0 ? this.formScores.reduce((a, b) => a + b, 0) / this.formScores.length : 0;
     this.onPulse({
@@ -567,6 +697,8 @@ export class WorkoutSessionManager {
       height: this.height,
       status: this.engine.status(),
       geometry,
+      landmarks,
+      autoCalibrating: this.autoCalibrating,
     });
   }
 

@@ -204,6 +204,25 @@ export async function searchPlayers(query: string, selfId: PlayerId): Promise<Pl
       return [];
     }
   }
+  // phone-number lookup (e.g. +91 98765 43210 / 9876543210)
+  const digits = q.replace(/[^\d]/g, "");
+  if (digits.length >= 7 && digits.length <= 15) {
+    const { findByPhone } = await import("../identity/PlayerService");
+    const owner = await findByPhone(digits);
+    const allWithPhone = (await allPlayers()).filter(
+      (p) => p.phone && p.phone.replace(/[^\d]/g, "").includes(digits) && p.playerId !== selfId,
+    );
+    const phoneHits: PlayerSearchHit[] = [];
+    for (const p of allWithPhone) {
+      const hit = await toHit({ playerId: p.playerId, username: p.username });
+      if (hit) phoneHits.push(hit);
+    }
+    if (owner && owner.playerId !== selfId && !allWithPhone.some((p) => p.playerId === owner.playerId)) {
+      const hit = await toHit({ playerId: owner.playerId, username: owner.username });
+      if (hit) phoneHits.unshift(hit);
+    }
+    if (phoneHits.length > 0) return phoneHits.slice(0, 10);
+  }
   // username lookup (case-insensitive contains)
   const lower = q.toLowerCase();
   const players = await allPlayers();

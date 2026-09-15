@@ -96,10 +96,10 @@ export class MatchServer {
   private onMessage(msg: RealtimeMessage): void {
     switch (msg.kind) {
       case "JOIN":
-        this.playerJoined(msg.playerId);
+        this.playerJoined(msg);
         break;
       case "READY":
-        this.playerReady(msg.playerId);
+        this.playerReady(msg.playerId, true);
         break;
       case "LEAVE": {
         const p = this.player(msg.playerId);
@@ -122,14 +122,57 @@ export class MatchServer {
     return this.state.players.find((p) => p.playerId === id);
   }
 
-  private playerJoined(id: PlayerId): void {
-    const p = this.player(id);
-    if (p) p.connected = true;
+  /**
+   * A player entered the channel. Same-browser joiners already exist in
+   * `state.players`; remote (cross-device) joiners are added here so their rep
+   * submissions and presence are tracked host-side.
+   */
+  private playerJoined(msg: Extract<RealtimeMessage, { kind: "JOIN" }>): void {
+    const id = msg.playerId;
+    const existing = this.player(id);
+    if (existing) {
+      existing.connected = true;
+      this.broadcastState();
+      return;
+    }
+    if (this.state.status !== "LOBBY") return;
+    if (this.state.players.length >= GAME_CONFIG.maxPlayers) return;
+    this.state.players.push({
+      playerId: id,
+      username: msg.username ?? id,
+      avatar: (msg.avatar as MatchPlayerState["avatar"]) ?? {
+        icon: "R",
+        frame: "frame_void",
+        background: "bg_volt",
+        accent: "#f59e0b",
+      },
+      level: msg.level ?? 1,
+      rankDisplay: msg.rankDisplay ?? "Rookie III",
+      reps: 0,
+      combo: 0,
+      formScore: 0,
+      connected: true,
+      ready: false,
+      lastRepAt: 0,
+      lastRepSeq: 0,
+    });
+    this.log("PLAYER_JOINED", id);
+    this.broadcastState();
   }
 
-  playerReady(id: PlayerId): void {
+  playerReady(id: PlayerId, ready = true): void {
     const p = this.player(id);
-    if (p) p.ready = true;
+    if (p) p.ready = ready;
+    this.maybeAutoLaunch();
+  }
+
+  /** Flip to COUNTDOWN once at least two connected players are all ready. */
+  private maybeAutoLaunch(): void {
+    if (this.state.status !== "LOBBY") return;
+    const active = this.state.players.filter((p) => p.connected);
+    if (active.length < 2) return;
+    if (!active.every((p) => p.ready)) return;
+    this.launch();
   }
 
   /** Server-side validation of a rep claim. */
@@ -266,7 +309,14 @@ export class MatchClient {
 
   async connect(): Promise<void> {
     await this.rt.connect(`rep:match:${this.matchId}`, this.playerId);
-    this.send({ kind: "JOIN", matchId: this.matchId, playerId: this.playerId });
+    this.send({ kind: "JOIN", matchId: this.matchId, playerId: this.playerId, ...this.profile });
+  }
+
+  /** Public profile fields sent with JOIN so a remote host can register us. */
+  profile: { username?: string; avatar?: unknown; level?: number; rankDisplay?: string } = {};
+
+  get realtime(): RealtimeService {
+    return this.rt;
   }
 
   private onMessage(msg: RealtimeMessage): void {

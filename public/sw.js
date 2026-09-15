@@ -1,8 +1,8 @@
-// RepRush service worker: offline-first app shell cache.
+// ZelusX service worker: offline-first app shell cache.
 // Runtime fetches are never cached so performance stays fresh and private.
 
-const CACHE = "reprush-v1";
-const PRECACHE = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon.svg"];
+const CACHE = "zelusx-v2";
+const PRECACHE = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon.svg", "/zelusx-bg.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -36,7 +36,7 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(
           () =>
-            new Response("RepRush is offline. Open it while connected to load assets.", {
+            new Response("ZelusX is offline. Open it while connected to load assets.", {
               status: 503,
               headers: { "Content-Type": "text/plain" },
             }),

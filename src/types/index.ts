@@ -50,6 +50,8 @@ export interface Player {
   playerId: PlayerId;
   username: string;
   email?: string;
+  /** User-supplied phone number used as a human-readable identity tracker. */
+  phone?: string;
   avatar: AvatarSpec;
   createdAt: number;
   title?: string;

@@ -81,8 +81,8 @@ describe("SquatRepEngine", () => {
 
   it("rejects a rep with a collapsing torso (TORSO_LEAN)", () => {
     const engine = new SquatRepEngine(cfg);
-    // hip angle 50 → 40° chest lean, past the strictness-adjusted 36° tolerance
-    const evs = cleanRep(engine, 3000, 50);
+    // hip angle 20 → 70° chest lean, past the relaxed 62° tolerance
+    const evs = cleanRep(engine, 3000, 20);
     const invalid = evs.find((e) => e.type === "INVALID_REP");
     expect(invalid).toBeTruthy();
     expect(invalid?.reason).toBe("TORSO_LEAN");

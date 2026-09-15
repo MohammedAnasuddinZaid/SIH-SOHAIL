@@ -465,6 +465,81 @@
   pointer-events: none;
 }
 
+/* Workout / battle live video — letterboxes (object-fit: contain) so the whole
+   body stays in frame on phones and desktops, with the skeleton glued on top. */
+.stage-card {
+  aspect-ratio: 4 / 3;
+  max-height: 62vh;
+  min-height: 260px;
+}
+
+.live-stage-wrapper {
+  width: 100%;
+}
+
+.workout-video {
+  display: block;
+  object-fit: contain !important;
+  background: #000 !important;
+}
+
+.profile-edit-row {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--sp-3);
+}
+
+@media (max-width: 767px) {
+  .profile-edit-row {
+    width: 100%;
+  }
+  .profile-edit-row .btn {
+    width: 100%;
+  }
+}
+
+.auth-phone {
+  background: var(--bg-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Battle live card grows to dominate the viewport when a match is running. */
+.battle-live-card {
+  min-height: clamp(300px, 64vh, 640px);
+}
+
+@media (max-width: 767px) {
+  .battle-live-card {
+    min-height: max(52vh, 340px);
+  }
+}
+@media (max-width: 480px) {
+  .battle-live-card {
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+.big-count {
+  position: absolute;
+  bottom: 18%;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  justify-content: center;
+  z-index: 4;
+  pointer-events: none;
+}
+
 .opacity {
   opacity: 0.6;
 }
@@ -515,4 +590,252 @@
 }
 .legal li {
   margin-bottom: var(--sp-2);
+}
+
+/* ─── Mobile responsive ─── */
+@media (max-width: 600px) {
+  .home-hero {
+    padding: var(--sp-4);
+  }
+  .hero-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-buttons .btn {
+    width: 100%;
+  }
+  .grid-4 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .match-live-card {
+    aspect-ratio: auto;
+    max-height: 60vh;
+  }
+  .overlay-hud {
+    padding: var(--sp-2);
+  }
+  .hud-pill {
+    font-size: var(--fs-xs);
+    padding: 0.25rem 0.6rem;
+  }
+  .chat-shell {
+    height: 55vh;
+  }
+  .modal {
+    max-width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    margin: var(--sp-3);
+  }
+  .auth-card {
+    padding: var(--sp-4);
+  }
+  .lb-table th,
+  .lb-table td {
+    padding: var(--sp-1) var(--sp-2);
+    font-size: var(--fs-xs);
+  }
+}
+@media (max-width: 400px) {
+  .grid-4 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ──────────────────────────── Workout Bar ──────────────────────────── */
+.workout-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface);
+  border: var(--border-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+.workout-bar__stats {
+  display: flex;
+  gap: var(--sp-3);
+  flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.workout-bar__stat {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--text-0);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+@media (max-width: 480px) {
+  .workout-bar {
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .workout-bar__stat {
+    font-size: var(--fs-sm);
+  }
+}
+@media (max-width: 480px) {
+  .match-live-card {
+    aspect-ratio: auto;
+    max-height: 60vh;
+  }
+}
+
+/* ──────────────────────────── QR sharing ──────────────────────────── */
+.qr-share {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.qr-share__code {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  flex: 1;
+  min-width: 180px;
+}
+.qr-share__code-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--brand);
+}
+.qr-share__link {
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  word-break: break-all;
+}
+.qr-code-view svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.qr-scanner {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: #000;
+}
+.qr-scanner video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.qr-scanner__frame {
+  position: absolute;
+  inset: 14%;
+  border: 3px solid rgba(255, 122, 26, 0.9);
+  border-radius: var(--r-md);
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+.qr-scanner__hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--sp-3);
+  text-align: center;
+  color: #fff;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ──────────────────────────── Live HUD / skeleton overlay ──────────────────────────── */
+.pose-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+.big-count {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  justify-content: center;
+}
+.big-count__value {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 14vw, 6rem);
+  font-weight: 800;
+  line-height: 0.9;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+}
+.big-count__label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Fullscreen mobile workout experience */
+.workout-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+.workout-fullscreen .match-live-card {
+  flex: 1;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  aspect-ratio: auto;
+  max-height: none;
+}
+.workout-fullscreen__top {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + var(--sp-3));
+  left: var(--sp-3);
+  right: var(--sp-3);
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  pointer-events: none;
+}
+.workout-fullscreen__bottom {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + var(--sp-4));
+  left: var(--sp-3);
+  right: var(--sp-3);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  pointer-events: none;
+}
+.workout-fullscreen__actions {
+  display: flex;
+  gap: var(--sp-3);
+  pointer-events: auto;
+}
+.hud-pill--big {
+  font-size: var(--fs-lg);
+  padding: 0.5rem 1rem;
 }

@@ -3,9 +3,9 @@
 // LAN via server/relay-server.mjs). A solo practice opponent is strictly
 // labeled SIMULATION — it is the host waiting for a second tab to join.
 
-import { createRoom, joinRoom, setReady, updateRoomStatus, getRoom, linkRoomToMatch } from "./RoomService";
-import { MatchServer, MatchClient, saveMatchState, matchesForPlayer, getMatchState } from "./MatchService";
-import { connectRelay, createRealtime, type RealtimeService } from "./RealtimeService";
+import { createRoom, setReady, getRoom, linkRoomToMatch, findRoomByCode } from "./RoomService";
+import { MatchServer, MatchClient, saveMatchState, getMatchState } from "./MatchService";
+import { createRealtime, lookupRoomOverRelay, type RealtimeService } from "./RealtimeService";
 import { getPlayer } from "../identity/PlayerService";
 import { getRating, levelProgress, rankDisplayName } from "../progression/ProgressionService";
 import type { BattleMode, MatchKind, PlayerId, RoomSettings, MatchState } from "../../types";
@@ -114,6 +114,7 @@ export interface OngoingMatch {
   server: MatchServer | null; // null on non-host clients
   client: MatchClient;
   realtime: RealtimeService;
+  roomId?: string;
   simulated?: { opponentId: PlayerId; start: () => void; stop: () => void };
 }
 
@@ -130,8 +131,9 @@ export interface CreateCoordinatedMatchOptions {
 export class MatchCoordinator {
   private realtime: RealtimeService;
 
-  constructor(useRelay = false) {
-    this.realtime = useRelay ? connectRelay() ?? createBroadcast() : createBroadcast();
+  constructor(useRelay = true) {
+    this.realtime = createRealtime();
+    void useRelay;
   }
 
   async createMatch(opts: CreateCoordinatedMatchOptions): Promise<OngoingMatch> {
@@ -202,8 +204,8 @@ export class MatchCoordinator {
       return { matchId: server.state.id, code: room.code, hostId: host, server, client, realtime: this.realtime, simulated };
     }
 
-    // Two-tab real match: host creates room; challenger joins by code on the
-    // same browser (BroadcastChannel) and reads the same room record.
+    // Real match: host creates the room AND immediately publishes + links the
+    // match so a joiner can resolve it by code from another device.
     const server = new MatchServer({
       roomId: room.id,
       code: room.code,
@@ -216,52 +218,108 @@ export class MatchCoordinator {
     });
     await this.realtime.connect(`rep:match:${server.state.id}`, host);
     server.subscribe(this.realtime);
+    await linkRoomToMatch(room.id, server.state.id);
+    await saveMatchState(server.state);
+    this.realtime.registerRoom?.({
+      code: room.code,
+      matchId: server.state.id,
+      hostId: host,
+      roomId: room.id,
+      settings: room.settings,
+    });
     const client = new MatchClient(server.state.id, host, { onState: () => {} });
-    _launchWhenReady(server, room.id, host, this.realtime);
-    return { matchId: server.state.id, code: room.code, hostId: host, server, client, realtime: this.realtime };
+    return { matchId: server.state.id, code: room.code, hostId: host, server, client, realtime: this.realtime, roomId: room.id };
   }
 
-  /** Join a live room by code as a challenger. */
+  /**
+   * Join a live room by code. Works both same-browser (BroadcastChannel +
+   * localStorage room record) and cross-device (relay room-code directory).
+   */
   async joinMatchByCode(code: string, playerId: PlayerId): Promise<OngoingMatch> {
-    const room = await joinRoom(code, playerId);
+    const normalized = code.trim().toUpperCase();
+
+    // 1. Try the local room store first (same browser / same device).
+    let room = await findRoomByCode(normalized);
+    // 2. Fall back to the relay directory (another device).
+    if (!room) {
+      const remote = await lookupRoomOverRelay(normalized);
+      if (!remote) throw new Error("ROOM_NOT_FOUND");
+      const client = new MatchClient(remote.matchId, playerId, { onState: () => {} });
+      client.profile = await publicProfile(playerId);
+      await client.connect();
+      // The host's match state lives ONLY on the host's device — a remote joiner
+      // can never read it from localStorage. Instead we connect to the shared
+      // channel and wait for the first authoritative HOST_STATE broadcast.
+      await awaitClientState(client, 6000);
+      client.ready();
+      return {
+        matchId: remote.matchId,
+        code: normalized,
+        hostId: remote.hostId,
+        server: null,
+        client,
+        realtime: client.realtime,
+        roomId: remote.roomId,
+      };
+    }
+
+    // Same-device path: mark ready, resolve the linked match, send JOIN.
     await setReady(room.id, playerId, true);
-    const matchState = await getActiveMatch(room.id);
-    if (!matchState) throw new Error("MATCH_NOT_READY");
+    const matchState = await resolveMatch(room.id, room.matchId);
+    if (!matchState) throw new Error("ROOM_READY_TIMEOUT");
     const client = new MatchClient(matchState.id, playerId, { onState: () => {} });
+    client.profile = await publicProfile(playerId);
     await client.connect();
-    return { matchId: matchState.id, code: room.code, hostId: room.hostId, server: null, client, realtime: this.realtime };
+    client.ready();
+    return { matchId: matchState.id, code: room.code, hostId: room.hostId, server: null, client, realtime: this.realtime, roomId: room.id };
   }
 }
 
-function createBroadcast(): RealtimeService {
-  return createRealtime();
+async function publicProfile(playerId: PlayerId): Promise<{ username?: string; avatar?: unknown; level?: number; rankDisplay?: string }> {
+  const p = await getPlayer(playerId);
+  if (!p) return {};
+  const rating = await getRating(playerId);
+  const level = await levelProgress(playerId);
+  return {
+    username: p.username,
+    avatar: p.avatar,
+    level: level.currentLevel,
+    rankDisplay: rankDisplayName(rating.rank, rating.division),
+  };
 }
 
-async function getActiveMatch(roomId: string): Promise<MatchState | null> {
-  const matches = await matchesForPlayer("" as PlayerId);
-  void matches;
-  // resolve from room storage
-  const { getRoom } = await import("./RoomService");
-  const room = await getRoom(roomId);
-  if (!room?.matchId) return null;
-  return getMatchState(room.matchId);
+/**
+ * Waits for the first authoritative HOST_STATE broadcast from the host over the
+ * shared realtime channel. Cross-device joiners cannot read the host's
+ * localStorage, so the sync state arrives over the relay instead.
+ */
+async function awaitClientState(client: MatchClient, timeoutMs = 6000): Promise<MatchState> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (client.state) return client.state;
+    await sleep(120);
+  }
+  throw new Error("ROOM_READY_TIMEOUT");
 }
 
-async function _launchWhenReady(server: MatchServer, roomId: string, _hostId: PlayerId, rt: RealtimeService): Promise<void> {
-  void rt;
-  const poll = window.setInterval(async () => {
+/** Resolve a room's linked match, waiting briefly for the host to publish it. */
+async function resolveMatch(roomId: string, matchId?: string): Promise<MatchState | null> {
+  if (matchId) {
+    const direct = await getMatchState(matchId);
+    if (direct) return direct;
+  }
+  const deadline = Date.now() + 4000;
+  while (Date.now() < deadline) {
     const room = await getRoom(roomId);
-    if (!room || room.status === "CANCELLED") {
-      window.clearInterval(poll);
-      return;
+    if (room?.matchId) {
+      const state = await getMatchState(room.matchId);
+      if (state) return state;
     }
-    const readyCount = room.players.filter((p) => p.ready).length;
-    if (readyCount >= room.settings.playerLimit && room.players.length >= 2) {
-      window.clearInterval(poll);
-      await updateRoomStatus(roomId, "COUNTDOWN");
-      await linkRoomToMatch(roomId, server.state.id);
-      await saveMatchState(server.state);
-      server.launch();
-    }
-  }, 700);
+    await sleep(250);
+  }
+  return null;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => window.setTimeout(r, ms));
 }

@@ -1,9 +1,39 @@
-/* RepRush app shell layout */
+/* ZelusX app shell layout */
 .arena-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Floating ZelusX glyph — the WhatsApp brand mark centered on the black arena */
+.zgx-glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(78vw, 720px);
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  opacity: 0.14;
+  filter: drop-shadow(0 0 60px rgba(255, 122, 26, 0.35)) drop-shadow(0 0 140px rgba(110, 164, 255, 0.18));
+}
+.zgx-glyph img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  will-change: transform;
+  animation: zgx-breathe 7s ease-in-out infinite;
+}
+@keyframes zgx-breathe {
+  0%,
+  100% {
+    filter: brightness(1) saturate(0.9);
+  }
+  50% {
+    filter: brightness(1.28) saturate(1.2);
+  }
 }
 
 .layout {

@@ -1,9 +1,9 @@
 {
-  "name": "reprush",
+  "name": "zelusx",
   "private": true,
-  "version": "1.1.0",
+  "version": "2.0.0",
   "type": "module",
-  "description": "RepRush, a competitive fitness game built around real push-ups and squats, powered by browser-based computer vision.",
+  "description": "ZelusX, a competitive fitness game built around real push-ups and squats, powered by browser-based computer vision.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.14",
+    "jsqr": "^1.4.0",
+    "qrcode-generator": "^2.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",

@@ -92,11 +92,11 @@ export function SocialPage() {
 
   return (
     <>
-      <SectionTitle title="Friends & feed" hint="Add by player ID or username. Everything is local to this device." />
+      <SectionTitle title="Friends & feed" hint="Add by player code, phone number, or username. Everything is local to this device." />
 
       <Card>
         <Field label="Find a player">
-          <input className="field__control" value={query} onChange={(e) => void doSearch(e.target.value)} placeholder="REP-00010001 or username" />
+          <input className="field__control" value={query} onChange={(e) => void doSearch(e.target.value)} placeholder="Player code, phone number, or username" />
         </Field>
         {hits.length > 0 ? (
           <div className="stack" style={{ marginTop: "var(--sp-3)" }}>

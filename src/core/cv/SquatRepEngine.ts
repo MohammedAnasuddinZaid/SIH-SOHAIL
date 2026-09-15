@@ -239,9 +239,15 @@ export class SquatRepEngine {
       }
 
       case "TOP": {
-        if (this.phase === "DESCENDING" && angle <= midway(topThreshold, bottomThreshold)) {
-          this.state = "DESCENDING";
+        // Start the descent as soon as the knee breaks below the midpoint.
+        // Handles a fast frame-to-frame drop straight to BOTTOM too.
+        if (angle <= midway(topThreshold, bottomThreshold)) {
           this.startRep(angle, t);
+          this.state = "DESCENDING";
+          if (this.phase === "BOTTOM") {
+            this.bottomAt = t;
+            this.state = "BOTTOM";
+          }
         }
         break;
       }
@@ -346,15 +352,15 @@ export class SquatRepEngine {
     const avgConf = this.avgConfidence();
 
     const reasons: InvalidRepReason[] = [];
-    if (avgConf < cfg.confidenceThreshold - 0.15) reasons.push("LOW_CONFIDENCE");
+    if (avgConf < cfg.confidenceThreshold - 0.05) reasons.push("LOW_CONFIDENCE");
     if (duration < cfg.minRepDuration || duration > cfg.maxRepDuration) reasons.push("UNSTABLE_POSE");
     if (down > 0 && down < cfg.minDownDuration) reasons.push("UNSTABLE_POSE");
     if (up > 0 && up < cfg.minUpDuration) reasons.push("UNSTABLE_POSE");
-    if (this.minAngle > cfg.bottomAngle + 14) reasons.push("INSUFFICIENT_DEPTH");
-    if (this.maxAngleSinceBottom > -1 && this.maxAngleSinceBottom < th.topThreshold - 14) reasons.push("INCOMPLETE_EXTENSION");
-    if (this.maxAbsLean > 45 - (1 - this.config.strictness) * 15) reasons.push("TORSO_LEAN");
+    if (this.minAngle > cfg.bottomAngle + 26) reasons.push("INSUFFICIENT_DEPTH");
+    if (this.maxAngleSinceBottom > -1 && this.maxAngleSinceBottom < th.topThreshold - 26) reasons.push("INCOMPLETE_EXTENSION");
+    if (this.maxAbsLean > 62) reasons.push("TORSO_LEAN");
     if (this.kneeDrifted) reasons.push("KNEE_DRIFT");
-    if (this.directionChanges > 6) reasons.push("INCOMPLETE_MOVEMENT");
+    if (this.directionChanges > 12) reasons.push("INCOMPLETE_MOVEMENT");
 
     const depth = clamp01(normalize(180 - this.minAngle, 0, 180 - cfg.bottomAngle));
     const extension = this.maxAngleSinceBottom > 0 ? clamp01(normalize(this.maxAngleSinceBottom, cfg.bottomAngle, th.topThreshold)) : 0;

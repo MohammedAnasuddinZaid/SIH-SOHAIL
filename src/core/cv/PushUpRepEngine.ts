@@ -240,9 +240,16 @@ export class PushUpRepEngine {
       }
 
       case "TOP": {
-        if (this.phase === "DESCENDING" && angle <= midway(topThreshold, bottomThreshold)) {
-          this.state = "DESCENDING";
+        // Start a rep as soon as the elbow breaks below the midpoint of the
+        // movement range. This also catches a fast frame-to-frame drop that
+        // jumps straight to BOTTOM (before, the rep was silently dropped).
+        if (angle <= midway(topThreshold, bottomThreshold)) {
           this.startRep(angle, t);
+          this.state = "DESCENDING";
+          if (this.phase === "BOTTOM") {
+            this.bottomAt = t;
+            this.state = "BOTTOM";
+          }
         }
         break;
       }
@@ -348,14 +355,14 @@ export class PushUpRepEngine {
     const avgConf = this.avgConfidence();
 
     const reasons: InvalidRepReason[] = [];
-    if (avgConf < cfg.confidenceThreshold - 0.15) reasons.push("LOW_CONFIDENCE");
+    if (avgConf < cfg.confidenceThreshold - 0.05) reasons.push("LOW_CONFIDENCE");
     if (duration < cfg.minRepDuration || duration > cfg.maxRepDuration) reasons.push("UNSTABLE_POSE");
     if (down > 0 && down < cfg.minDownDuration) reasons.push("UNSTABLE_POSE");
     if (up > 0 && up < cfg.minUpDuration) reasons.push("UNSTABLE_POSE");
-    if (this.minAngle > cfg.bottomAngle + 12) reasons.push("INSUFFICIENT_DEPTH");
-    if (this.maxAngleSinceBottom > -1 && this.maxAngleSinceBottom < th.topThreshold - 14) reasons.push("INCOMPLETE_EXTENSION");
-    if (this.maxAbsHipDev > th.hipTolerance * 1.6) reasons.push(this.hipSign === "PIKE" ? "HIP_PIKE" : "HIP_SAG");
-    if (this.directionChanges > 6) reasons.push("INCOMPLETE_MOVEMENT");
+    if (this.minAngle > cfg.bottomAngle + 25) reasons.push("INSUFFICIENT_DEPTH");
+    if (this.maxAngleSinceBottom > -1 && this.maxAngleSinceBottom < th.topThreshold - 26) reasons.push("INCOMPLETE_EXTENSION");
+    if (this.maxAbsHipDev > th.hipTolerance * 2.5) reasons.push(this.hipSign === "PIKE" ? "HIP_PIKE" : "HIP_SAG");
+    if (this.directionChanges > 12) reasons.push("INCOMPLETE_MOVEMENT");
 
     const depth = clamp01(normalize(180 - this.minAngle, 0, 180 - cfg.bottomAngle));
     const extension = this.maxAngleSinceBottom > 0 ? clamp01(normalize(this.maxAngleSinceBottom, cfg.bottomAngle, th.topThreshold)) : 0;

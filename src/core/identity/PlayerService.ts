@@ -4,6 +4,7 @@ import type { Player, AvatarSpec, PlayerPrivacy, UserSettings, CoachPersonalityI
 
 const playerCol = store<Player>("rep:player");
 const settingsCol = store<UserSettings>("rep:settings");
+const phoneIndex = store<string>("rep:phone-index"); // phone -> playerId (on-device)
 
 export const DEFAULT_AVATAR: AvatarSpec = {
   icon: "🔥",
@@ -96,6 +97,36 @@ export async function updateAvatar(playerId: string, avatar: Partial<AvatarSpec>
   const next = { ...p, avatar: { ...p.avatar, ...avatar } as AvatarSpec };
   await playerCol.put(playerId, next);
   return next;
+}
+
+export function normalizePhone(phone: string): string {
+  return phone.replace(/[^\d+]/g, "").trim();
+}
+
+/**
+ * Binds a phone number to a player as their tracking identity. On this device
+ * the mapping phone -> player is unique: binding an already-taken phone hands
+ * back the existing owner instead of silently overwriting it.
+ */
+export async function bindPhone(playerId: string, phone: string): Promise<{ player: Player; linked: boolean }> {
+  const normalized = normalizePhone(phone);
+  if (normalized.length < 7) throw new Error("PHONE_TOO_SHORT");
+  const existing = await phoneIndex.get(normalized);
+  if (existing && existing !== playerId) {
+    const owner = await getPlayer(existing);
+    if (owner) return { player: owner, linked: false };
+  }
+  await phoneIndex.put(normalized, playerId);
+  const player = await updatePlayer(playerId, { phone: normalized });
+  return { player, linked: true };
+}
+
+export async function findByPhone(phone: string): Promise<Player | null> {
+  const normalized = normalizePhone(phone);
+  if (normalized.length < 7) return null;
+  const playerId = await phoneIndex.get(normalized);
+  if (!playerId) return null;
+  return getPlayer(playerId);
 }
 
 export async function updatePrivacy(playerId: string, privacy: Partial<PlayerPrivacy>): Promise<Player> {

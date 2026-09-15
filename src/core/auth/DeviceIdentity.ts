@@ -39,7 +39,7 @@ export async function rotateDeviceId(): Promise<string> {
   return id;
 }
 
-/** Deterministic, unique, memorable code for a device: REP-XXXX-XXXX. */
+/** Deterministic, unique, memorable code for a device: ZX-XXXX-XXXX. */
 export function devicePlayerId(deviceId: string): PlayerId {
   const hex = deviceId.replace(/[^0-9a-f]/gi, "").slice(0, 16).padEnd(16, "0") || "0";
   let n = BigInt(`0x${hex}`);
@@ -55,9 +55,13 @@ export function devicePlayerId(deviceId: string): PlayerId {
 /** Type-level brand so a validated code is only usable as a PlayerCode. */
 export type PlayerCode = string & { __brand: "REP_PLAYER_CODE" };
 
-/** True only for a valid `REP-XXXX-XXXX` code (confusion-safe alphabet). */
+function playerCodeRegExp(): RegExp {
+  return new RegExp(`^${branding.PLAYER_ID_PREFIX}-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}$`);
+}
+
+/** True only for a valid `ZX-XXXX-XXXX` code (confusion-safe alphabet). */
 export function isValidPlayerCode(code: string): code is PlayerCode {
-  return /^REP-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}-[23456789ABCDEFGHJKMNPQRSTVWXYZ]{4}$/.test(code);
+  return playerCodeRegExp().test(code);
 }
 
 /**

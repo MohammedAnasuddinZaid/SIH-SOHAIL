@@ -1,6 +1,7 @@
 import { TRACKED_LANDMARKS } from "../../config/cv";
 import { angleDeg, distance, lineDeviation, midpoint, normalize, clamp01 } from "./LandmarkMath";
 import type { NormalizedLandmark } from "./LandmarkMath";
+import type { ExerciseType } from "../../types";
 
 export type BodySide = "LEFT" | "RIGHT";
 export type BodyOrientation = "SIDE" | "FRONT" | "BACK" | "UNKNOWN";
@@ -74,6 +75,8 @@ export function analyzeGeometry(
      * the mirror of a side ~ camera flips the visibility sums by a hair.
      */
     preferredSide?: BodySide;
+    /** Which movement is being tracked; selects the required-joint set. */
+    exercise?: ExerciseType;
   }
 ): GeometryObservation {
   const visThreshold = opts.visibilityThreshold ?? 0.55;
@@ -98,9 +101,17 @@ export function analyzeGeometry(
 
   const side = pickSide();
   const s = side ?? SIDES.RIGHT;
-  // Only require the SELECTED side's landmarks to be visible for rep tracking.
-  // Requiring both sides breaks side-view exercises where the far arm is occluded.
-  const sideLandmarks = [s.shoulderIdx, s.elbowIdx, s.wristIdx, s.hipIdx, s.kneeIdx, s.ankleIdx];
+  // Only require the joints that actually drive the active movement. Requiring
+  // the FULL side chain used to silently kill every push-up where the feet were
+  // out of frame (ankles/knees occluded), and every squat where the hands were
+  // hidden. Exercise-aware requirements fix that without weakening validation:
+  //  - Push-up  → the loaded arm (shoulder/elbow/wrist) + hip alignment.
+  //  - Squat    → the loaded leg (hip/knee/ankle) + shoulder for torso angle.
+  const exercise = opts.exercise ?? "PUSH_UP";
+  const sideLandmarks =
+    exercise === "SQUAT"
+      ? [s.shoulderIdx, s.hipIdx, s.kneeIdx, s.ankleIdx]
+      : [s.shoulderIdx, s.elbowIdx, s.wristIdx, s.hipIdx];
   const requiredVisible = sideLandmarks.every((idx) => (landmarks[idx]?.visibility ?? 0) >= visThreshold * 0.7);
 
   const sh = landmarks[s.shoulderIdx];

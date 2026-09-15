@@ -33,7 +33,8 @@ export type IconName =
   | "moon"
   | "external"
   | "file-text"
-  | "scale";
+  | "scale"
+  | "edit";
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {
   name: IconName;
@@ -228,6 +229,12 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M6 21h12" />
       <path d="m6 7-3 7a3 3 0 0 0 6 0z" />
       <path d="m18 7-3 7a3 3 0 0 0 6 0z" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z" />
+      <path d="m15 5 4 4" />
     </>
   ),
 };

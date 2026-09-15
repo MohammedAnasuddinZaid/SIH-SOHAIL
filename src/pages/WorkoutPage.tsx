@@ -3,15 +3,17 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/Button";
 import { Card, Stat } from "../components/Primitives";
 import { Icon } from "../components/Icons";
+import { PoseOverlay } from "../components/PoseOverlay";
 import { CameraService } from "../core/cv/CameraService";
 import { PoseDetectionService } from "../core/cv/PoseDetectionService";
 import { WorkoutSessionManager, type SessionPulse, type WorkoutSessionOptions } from "../core/cv/WorkoutSessionManager";
 import { applyWorkoutResult, type WorkoutGrant } from "../core/progression/ProgressionService";
+import type { NormalizedLandmark } from "../core/cv/LandmarkMath";
 import { useAuthStore } from "../stores/authStore";
 import type { ExerciseType, PlayerId, WorkoutMode } from "../types";
 import "./pages.css";
 
-type Phase = "SETUP" | "CALIBRATING" | "READY" | "RUNNING" | "PAUSED" | "FINISHED" | "ERROR";
+type Phase = "SETUP" | "STARTING" | "RUNNING" | "PAUSED" | "FINISHED" | "ERROR";
 
 export function WorkoutPage() {
   const [params] = useSearchParams();
@@ -30,22 +32,27 @@ export function WorkoutPage() {
   const exercise = (params.get("exercise") as ExerciseType | null) ?? "PUSH_UP";
 
   const [phase, setPhase] = useState<Phase>("SETUP");
-  const [calProgress, setCalProgress] = useState(0);
   const [pulse, setPulse] = useState<SessionPulse | null>(null);
+  const [landmarks, setLandmarks] = useState<NormalizedLandmark[] | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState<number | null>(null);
   const [grant, setGrant] = useState<WorkoutGrant | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [autoCalibrating, setAutoCalibrating] = useState(false);
 
-  const handlePulse = useCallback((p: SessionPulse) => {
-    setPulse(p);
-    if (duration > 0 && p.state === "RUNNING" && p.elapsedMs >= duration * 1000 && sessionRef.current) {
-      void finishIt(sessionRef.current);
-    }
-    if (duration === 0 && p.state === "RUNNING" && p.validReps >= target && sessionRef.current) {
-      void finishIt(sessionRef.current);
-    }
-  }, [duration, target]);
+  const handlePulse = useCallback(
+    (p: SessionPulse) => {
+      setPulse(p);
+      setAutoCalibrating(p.autoCalibrating);
+      setLandmarks(p.landmarks ?? null);
+      if (duration > 0 && p.state === "RUNNING" && p.elapsedMs >= duration * 1000 && sessionRef.current) {
+        void finishIt(sessionRef.current);
+      }
+      if (duration === 0 && p.state === "RUNNING" && p.validReps >= target && sessionRef.current) {
+        void finishIt(sessionRef.current);
+      }
+    },
+    [duration, target],
+  );
 
   async function finishIt(session: WorkoutSessionManager): Promise<void> {
     if (sessionRef.current !== session) return;
@@ -57,46 +64,28 @@ export function WorkoutPage() {
     setPhase("FINISHED");
   }
 
-  const startCalibration = useCallback(async () => {
+  const startLiveSession = useCallback(async () => {
     const session = sessionRef.current;
     if (!session || phase !== "SETUP") return;
-    setPhase("CALIBRATING");
+    setPhase("STARTING");
     try {
-      await session.startCalibration();
-      setPhase("READY");
+      await session.startLive();
+      setPhase("RUNNING");
     } catch (e) {
       console.error(e);
-      setErr((e as Error).message || "Camera could not start. Grant camera permission and try again.");
+      setErr((e as Error).message || "Camera could not start.");
       setPhase("ERROR");
     }
   }, [phase]);
 
-  // wire page controls to session events
   const wire = useCallback((session: WorkoutSessionManager) => {
     session.onEvent = (e) => {
-      if (e.type === "CALIBRATION_PROGRESS") setCalProgress(e.progress);
+      if (e.type === "CALIBRATION_COMPLETE") setAutoCalibrating(false);
       if (e.type === "FORM_WARNING") setFeedback(e.message ?? e.code);
-      if (e.type === "VALID_REP") setFeedback("Rep counted ✓");
+      if (e.type === "VALID_REP") setFeedback("Rep counted!");
+      if (e.type === "INVALID_REP" && "reason" in e.rep) setFeedback(`${(e.rep as any).reason} - try again`);
     };
   }, []);
-
-  const startRun = useCallback(() => {
-    const session = sessionRef.current;
-    if (!session || phase !== "READY") return;
-    setCountdown(3);
-    let c = 3;
-    const iv = window.setInterval(() => {
-      c -= 1;
-      if (c <= 0) {
-        window.clearInterval(iv);
-        setCountdown(null);
-        session.start();
-        setPhase("RUNNING");
-        return;
-      }
-      setCountdown(c);
-    }, 1000);
-  }, [phase]);
 
   const pauseRun = useCallback(() => {
     sessionRef.current?.pause();
@@ -122,7 +111,6 @@ export function WorkoutPage() {
     }
   }, [navigate]);
 
-  // init once
   useEffect(() => {
     if (initStarted.current) return;
     initStarted.current = true;
@@ -152,7 +140,6 @@ export function WorkoutPage() {
         session.onPulse = handlePulse;
         wire(session);
         sessionRef.current = session;
-        // warm the model early
         await pose.load();
         if (disposed) return;
         setPhase("SETUP");
@@ -174,66 +161,113 @@ export function WorkoutPage() {
 
   if (!playerId) return null;
 
+  const live = phase === "RUNNING" || phase === "PAUSED";
+
   return (
-    <div className="stack">
-      <div className="match-live-card">
-        <video ref={videoRef} className={phase === "SETUP" || phase === "CALIBRATING" || phase === "READY" || phase === "RUNNING" || phase === "PAUSED" ? "" : "hidden-video"} autoPlay playsInline muted style={{ transform: "scaleX(-1)" }} />
-        {phase !== "FINISHED" && phase !== "ERROR" ? (
-          <div className="overlay-hud">
-            <div className="row" style={{ justifyContent: "space-between" }}>
-              <span className="hud-pill">● {phaseLabel(phase)}</span>
-              <span className="hud-pill">{duration > 0 ? fmtTime(duration, pulse?.elapsedMs) : `${target} rep goal`}</span>
-            </div>
-            {phase === "RUNNING" || phase === "PAUSED" ? (
-              <>
-                <div style={{ display: "flex", gap: "var(--sp-4)", justifyContent: "center" }}>
-                  <div className="hud-pill" style={{ fontSize: "1.15rem" }}>Reps {pulse?.validReps ?? 0}</div>
-                  <div className="hud-pill" style={{ fontSize: "1.15rem" }}><Icon name="flame" size={16} /> {pulse?.combo ?? 0}</div>
-                  <div className="hud-pill" style={{ fontSize: "1.15rem" }}>Form {Math.round(pulse?.formAccuracy ?? 0)}%</div>
-                </div>
-                {feedback ? <div className="hud-pill" style={{ margin: "0 auto" }}>{feedback}</div> : null}
-                <div className="row" style={{ justifyContent: "center" }}>
-                  {phase === "RUNNING" ? <Button variant="danger" size="sm" onClick={pauseRun}><Icon name="pause" size={16} /> Pause</Button> : <Button variant="primary" size="sm" onClick={resumeRun}><Icon name="play" size={16} /> Resume</Button>}
-                  <Button variant="ghost" size="sm" onClick={() => void stopRun()}><Icon name="stop" size={14} /> Finish</Button>
-                </div>
-              </>
-            ) : null}
-            {phase === "CALIBRATING" ? (
-              <div style={{ alignSelf: "center" }}>
-                <div className="hud-pill">Calibrating your pose… {Math.round(calProgress * 100)}%</div>
+    <>
+      {/* Start camera button — kept up top, always visible in SETUP */}
+      {phase === "SETUP" && (
+        <div className="workout-bar" style={{ justifyContent: "center" }}>
+          <Button variant="primary" size="lg" onClick={() => void startLiveSession()} style={{ width: "100%", maxWidth: 420 }}>
+            <Icon name="camera" size={18} /> Start camera — count reps live
+          </Button>
+        </div>
+      )}
+      {phase === "STARTING" && (
+        <div className="workout-bar" style={{ justifyContent: "center" }}>
+          <span className="hud-pill">Starting camera…</span>
+        </div>
+      )}
+
+      {/* Single persistent live stage: the same <video> node across SETUP and
+          fullscreen, so the camera stream never gets torn down mid-lift. */}
+      <div className={live ? "workout-fullscreen" : "live-stage-wrapper"}>
+        <div className={live ? "match-live-card" : "match-live-card stage-card"}>
+          <video
+            ref={videoRef}
+            className="workout-video"
+            autoPlay
+            playsInline
+            muted
+            style={{ transform: "scaleX(-1)", objectFit: "contain", background: "#000" }}
+          />
+          {live || phase === "STARTING" ? <PoseOverlay landmarks={landmarks} videoRef={videoRef} /> : null}
+
+          {live && (
+            <>
+              <div className="workout-fullscreen__top">
+                <span className="hud-pill">● {phaseLabel(phase)}</span>
+                <span className="hud-pill">
+                  {duration > 0 ? fmtTime(duration, pulse?.elapsedMs) : `${target} rep goal`}
+                </span>
               </div>
-            ) : null}
-          </div>
-        ) : null}
+
+              {autoCalibrating ? (
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 4 }}>
+                  <span className="hud-pill">Calibrating… get ready to move</span>
+                </div>
+              ) : null}
+
+              <div className="big-count">
+                <span className="big-count__value">{pulse?.validReps ?? 0}</span>
+                <span className="big-count__label">reps</span>
+              </div>
+
+              {feedback ? (
+                <div style={{ position: "absolute", top: "24%", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 4 }}>
+                  <span className="hud-pill">{feedback}</span>
+                </div>
+              ) : null}
+
+              <div className="workout-fullscreen__bottom">
+                <div className="row" style={{ justifyContent: "center", gap: "var(--sp-2)" }}>
+                  <span className="hud-pill">
+                    <Icon name="flame" size={16} /> {pulse?.combo ?? 0}
+                  </span>
+                  <span className="hud-pill">Form {Math.round(pulse?.formAccuracy ?? 0)}%</span>
+                </div>
+                <div className="workout-fullscreen__actions">
+                  {phase === "RUNNING" ? (
+                    <Button variant="danger" size="lg" onClick={pauseRun}>
+                      <Icon name="pause" size={18} /> Pause
+                    </Button>
+                  ) : (
+                    <Button variant="primary" size="lg" onClick={resumeRun}>
+                      <Icon name="play" size={18} /> Resume
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="lg" onClick={() => void stopRun()}>
+                    <Icon name="stop" size={16} /> Finish
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {phase === "STARTING" && (
+            <div className="overlay-hud" style={{ justifyContent: "center", alignItems: "center" }}>
+              <span className="hud-pill">Starting camera…</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {phase === "SETUP" ? (
+      {/* Setup info */}
+      {phase === "SETUP" && (
         <Card>
-          <h3>How a session works</h3>
-          <p>
+          <p style={{ margin: 0 }}>
             {exercise === "SQUAT"
-              ? "First your pose is calibrated - stand tall in your squat (top) position and hold for a moment. Then you get a 3-second countdown and the engine counts validated squats by tracking your knee depth and torso control. Your camera feed is processed entirely on this device."
-              : "First your pose is calibrated - get into an extended plank (top) position and hold it for a moment. Then you get a 3-second countdown and the engine counts validated push-ups. Your camera feed is processed entirely on this device."}
+              ? "Stand tall so your whole body is visible. The moment you press start the camera opens and every squat counts live."
+              : "Get into a plank position so your whole body is visible. The moment you press start the camera opens and every push-up counts live."}
           </p>
-          <div className="row">
-            <Button variant="primary" onClick={() => void startCalibration()}>Start calibration</Button>
-            <Button variant="ghost" onClick={() => navigate("/train")}>Change settings</Button>
-          </div>
+          <p style={{ margin: "var(--sp-2) 0 0", fontSize: "var(--fs-sm)", color: "var(--text-2)" }}>
+            No setup pose needed — the engine calibrates itself in the background while you train. Every rep is verified against your form.
+          </p>
         </Card>
-      ) : null}
+      )}
 
-      {phase === "READY" ? (
-        <Card>
-          <h3>Pose calibrated</h3>
-          <p>Engine ready. Your camera has your pose locked. You get {countdown !== null ? countdown : ""} seconds - then go.</p>
-          <div className="row">
-            <Button variant="primary" size="lg" onClick={startRun}><Icon name="play" size={18} /> Go ({countdown ?? 3})</Button>
-            <Button variant="ghost" onClick={() => navigate("/train")}>Back</Button>
-          </div>
-        </Card>
-      ) : null}
-
-      {phase === "ERROR" ? (
+      {/* Error card */}
+      {phase === "ERROR" && (
         <Card>
           <h3>Unable to start camera</h3>
           <p>{err}</p>
@@ -242,9 +276,10 @@ export function WorkoutPage() {
             <Button variant="ghost" onClick={() => navigate("/train")}>Back</Button>
           </div>
         </Card>
-      ) : null}
+      )}
 
-      {phase === "FINISHED" && grant ? (
+      {/* Finished card */}
+      {phase === "FINISHED" && grant && (
         <Card>
           <h3>Session complete</h3>
           <div className="grid-4">
@@ -253,23 +288,30 @@ export function WorkoutPage() {
             <Stat value={grant.newPRs.length} label="New PRs" />
             <Stat value={grant.streak.current} label={`Streak (${grant.streak.best} best)`} />
           </div>
-          {grant.newAchievements.length > 0 ? (
+          {grant.newAchievements.length > 0 && (
             <p>
               <Icon name="trophy" size={16} /> Achievements: {grant.newAchievements.map((a) => a.achievementId).join(", ")}
             </p>
-          ) : null}
+          )}
           <div className="row">
             <Button variant="primary" onClick={() => navigate("/")}>Done</Button>
             <Button variant="ghost" onClick={() => window.location.reload()}>Train again</Button>
           </div>
         </Card>
-      ) : null}
-    </div>
+      )}
+    </>
   );
 }
 
 function phaseLabel(p: Phase): string {
-  return p === "SETUP" ? "Setup" : p === "CALIBRATING" ? "Calibrating" : p === "READY" ? "Ready" : p === "RUNNING" ? "Live" : p === "PAUSED" ? "Paused" : p;
+  switch (p) {
+    case "SETUP": return "Setup";
+    case "STARTING": return "Starting...";
+    case "RUNNING": return "Live";
+    case "PAUSED": return "Paused";
+    case "FINISHED": return "Finished";
+    case "ERROR": return "Error";
+  }
 }
 
 function fmtTime(total: number, elapsed?: number): string {
